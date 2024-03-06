@@ -39,17 +39,22 @@ void AudioManager::initI2S()
     i2s_set_clk(I2S_NUM_0, 16000, I2S_BITS_PER_SAMPLE_16BIT, I2S_CHANNEL_MONO);
 }
 
+bool AudioManager::isRecording()
+{
+    return _isRecording; // Return the current recording state
+}
+
 void AudioManager::recordAudio()
 {
-    if (!isRecording)
+    if (!isRecording())
     {
         Serial.println("Recording audio...");
-        isRecording = true;
+        _isRecording = true;
         clearAudioData(); // Clear previous data
 
         size_t bytes_read;
         uint8_t i2s_read_buff[1024];
-        while (isRecording)
+        while (isRecording())
         {
             // Read data from the I2S peripheral
             i2s_read(I2S_NUM_0, &i2s_read_buff, sizeof(i2s_read_buff), &bytes_read, portMAX_DELAY);
@@ -63,10 +68,10 @@ void AudioManager::recordAudio()
 
 void AudioManager::stopRecording()
 {
-    if (isRecording)
+    if (isRecording())
     {
         Serial.println("Stopped recording.");
-        isRecording = false;
+        _isRecording = false;
         // Placeholder for stopping the recording logic
         // Ensure you stop the loop that reads data from I2S
     }
