@@ -23,6 +23,16 @@ void BLEManager::setupBLE()
     pAdvertising->start();
 }
 
+void BLEManager::sendData(const std::vector<uint8_t> &data)
+{
+    if (pCharacteristic != nullptr)
+    {
+        // Ensure the data is correctly typed and passed.
+        pCharacteristic->setValue((uint8_t *)data.data(), data.size());
+        pCharacteristic->notify(); // Notify connected client
+    }
+}
+
 void BLEManager::onWrite(BLECharacteristic *pCharacteristic)
 {
     std::string value = pCharacteristic->getValue();
