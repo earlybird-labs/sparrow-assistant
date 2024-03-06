@@ -80,5 +80,5 @@ void loop()
   Serial.println(micAnalogValue);
 
   // No need to update the characteristic value here as it's handled by the callback
-  delay(50); // Shorter delay for more frequent readings
+  delay(100); // Shorter delay for more frequent readings
 }
