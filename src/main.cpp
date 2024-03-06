@@ -26,22 +26,35 @@ void setup()
 
 void loop()
 {
-  bool currentButtonState = digitalRead(buttonPin);
-  if (currentButtonState != lastButtonState)
+  try
   {
-    if (currentButtonState == HIGH)
+    bool currentButtonState = digitalRead(buttonPin);
+    if (currentButtonState != lastButtonState)
     {
-      if (!audioManager.isRecording())
+      Serial.print("Button state changed: ");
+      Serial.println(currentButtonState ? "HIGH" : "LOW");
+
+      if (currentButtonState == HIGH)
       {
-        audioManager.recordAudio();
+        if (!audioManager.isRecording())
+        {
+          Serial.println("Starting audio recording...");
+          audioManager.recordAudio();
+        }
+        else
+        {
+          Serial.println("Stopping audio recording and sending data...");
+          audioManager.stopRecording();
+          bleManager.sendData(audioManager.getAudioData());
+        }
       }
-      else
-      {
-        audioManager.stopRecording();
-        bleManager.sendData(audioManager.getAudioData());
-      }
+      lastButtonState = currentButtonState;
     }
-    lastButtonState = currentButtonState;
+    delay(50); // Debounce delay
   }
-  delay(50); // Debounce delay
+  catch (const std::exception &e)
+  {
+    Serial.print("Error in loop: ");
+    Serial.println(e.what());
+  }
 }
