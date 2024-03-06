@@ -36,9 +36,9 @@ void setup()
   Serial.println("Follow these steps:");
   Serial.println("1- Download and install a BLE scanner app on your phone");
   Serial.println("2- Scan for BLE devices in the app");
-  Serial.println("3- Connect to ESP32-BLE_Server");
+  Serial.println("3- Connect to EARLYBIRD-ESP32-BLE-Server");
   Serial.println("4- Write something to the CUSTOM CHARACTERISTIC in CUSTOM SERVICE");
-  Serial.println("5- Observe the response =)");
+  Serial.println("5- Observe the response");
 
   // Initialize BLE device and create server
   BLEDevice::init("EARLYBIRD-ESP32-BLE-Server");
