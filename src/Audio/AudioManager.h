@@ -4,6 +4,11 @@
 #include <driver/i2s.h>
 #include <vector>
 
+// Define the GPIO pins for I2S interface based on the wiring information
+#define I2S_MIC_SERIAL_CLOCK GPIO_NUM_26
+#define I2S_MIC_LEFT_RIGHT_CLOCK GPIO_NUM_22
+#define I2S_MIC_SERIAL_DATA GPIO_NUM_21
+
 class AudioManager
 {
 public:
