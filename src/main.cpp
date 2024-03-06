@@ -1,23 +1,47 @@
 #include <Arduino.h>
+// Include AudioManager and BLEManager headers
+#include "Audio/AudioManager.h"
 #include "BLE/BLEManager.h"
 
-// Define your UUIDs and device name
-#define DEVICE_NAME "EBL-ESP32"
-#define SERVICE_UUID "aee41206-d70d-47f0-9a4f-b9f4faba2a28"
-#define CHARACTERISTIC_UUID "dd83e3eb-324f-46a7-a79c-981c40f2401b"
+// Assuming button is connected to pin 0
+const int buttonPin = 0;
+bool lastButtonState = LOW;
 
+// Define DEVICE_NAME, SERVICE_UUID, and CHARACTERISTIC_UUID
+const char *DEVICE_NAME = "EBL-CANARY";
+const char *SERVICE_UUID = "aaef8ad8-7bff-4351-b04a-391d5fd66bc7";
+const char *CHARACTERISTIC_UUID = "60abdc93-8293-49f2-918b-ad52250201d9";
+
+AudioManager audioManager;
 BLEManager bleManager(DEVICE_NAME, SERVICE_UUID, CHARACTERISTIC_UUID);
 
 void setup()
 {
   Serial.begin(115200);
-  delay(2000); // Short delay for serial connection to establish
+  pinMode(buttonPin, INPUT);
 
+  audioManager.begin();
   bleManager.setupBLE();
 }
 
 void loop()
 {
-  // Your loop code here, if needed
-  delay(1000); // Example delay
+  bool currentButtonState = digitalRead(buttonPin);
+  if (currentButtonState != lastButtonState)
+  {
+    if (currentButtonState == HIGH)
+    {
+      if (!audioManager.isRecording())
+      {
+        audioManager.recordAudio();
+      }
+      else
+      {
+        audioManager.stopRecording();
+        bleManager.sendData(audioManager.getAudioData());
+      }
+    }
+    lastButtonState = currentButtonState;
+  }
+  delay(50); // Debounce delay
 }
