@@ -4,7 +4,7 @@
 #include <BLEUtils.h>
 #include <BLEServer.h>
 
-// UUIDs can be generated at https://www.uuidgenerator.net/
+
 #define SERVICE_UUID        "aee41206-d70d-47f0-9a4f-b9f4faba2a28"
 #define CHARACTERISTIC_UUID "dd83e3eb-324f-46a7-a79c-981c40f2401b"
 
