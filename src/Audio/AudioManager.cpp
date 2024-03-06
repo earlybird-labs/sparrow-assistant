@@ -28,12 +28,15 @@ void AudioManager::initI2S()
         .tx_desc_auto_clear = false,
         .fixed_mclk = 0};
 
+    // Update the pin configuration to match the INMP441 microphone wiring
     const i2s_pin_config_t pin_config = {
-        .bck_io_num = I2S_PIN_NO_CHANGE,
-        .ws_io_num = I2S_PIN_NO_CHANGE,
-        .data_out_num = I2S_PIN_NO_CHANGE,
-        .data_in_num = I2S_PIN_NO_CHANGE};
+        .bck_io_num = 26,                  // I2S Serial Clock (SCK)
+        .ws_io_num = 22,                   // I2S Left Right Clock (WS)
+        .data_out_num = I2S_PIN_NO_CHANGE, // Not used since this is a microphone input
+        .data_in_num = 21                  // I2S Serial Data (SD)
+    };
 
+    // Install and start I2S driver with the above configuration
     i2s_driver_install(I2S_NUM_0, &i2s_config, 0, NULL);
     i2s_set_pin(I2S_NUM_0, &pin_config);
     i2s_set_clk(I2S_NUM_0, 16000, I2S_BITS_PER_SAMPLE_16BIT, I2S_CHANNEL_MONO);
