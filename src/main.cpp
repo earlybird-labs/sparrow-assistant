@@ -3,10 +3,6 @@
 #include "Audio/AudioManager.h"
 #include "BLE/BLEManager.h"
 
-// Assuming button is connected to pin 0
-const int buttonPin = 0;
-bool lastButtonState = LOW;
-
 // Define DEVICE_NAME, SERVICE_UUID, and CHARACTERISTIC_UUID
 const char *DEVICE_NAME = "EBL-CANARY";
 const char *SERVICE_UUID = "aaef8ad8-7bff-4351-b04a-391d5fd66bc7";
@@ -18,39 +14,56 @@ BLEManager bleManager(DEVICE_NAME, SERVICE_UUID, CHARACTERISTIC_UUID);
 void setup()
 {
   Serial.begin(115200);
-  pinMode(buttonPin, INPUT);
 
   audioManager.begin();
   bleManager.setupBLE();
+  Serial.println("Setup complete, starting loop...");
 }
 
 void loop()
 {
   try
   {
-    bool currentButtonState = digitalRead(buttonPin);
-    if (currentButtonState != lastButtonState)
+    Serial.println("Starting audio recording for 5 seconds...");
+    audioManager.recordAudio();
+    delay(5000); // Record for 5 seconds
+    if (!audioManager.isRecording())
     {
-      Serial.print("Button state changed: ");
-      Serial.println(currentButtonState ? "HIGH" : "LOW");
+      Serial.println("Audio recording was not active.");
+      return;
+    }
 
-      if (currentButtonState == HIGH)
+    Serial.println("Stopping audio recording...");
+    audioManager.stopRecording();
+    Serial.println("Preparing audio data for streaming...");
+    auto audioData = audioManager.getAudioData(); // Retrieve audio data
+
+    // Function to handle the streaming of audio data
+    auto streamAudioData = [](const std::vector<uint8_t> &data)
+    {
+      const size_t maxBLEPayloadSize = 600;
+      if (data.size() <= maxBLEPayloadSize)
       {
-        if (!audioManager.isRecording())
+        Serial.println("Streaming audio data...");
+        bleManager.sendData(data);
+      }
+      else
+      {
+        Serial.println("Audio data size exceeds BLE maximum payload size, splitting data...");
+        for (size_t i = 0; i < data.size(); i += maxBLEPayloadSize)
         {
-          Serial.println("Starting audio recording...");
-          audioManager.recordAudio();
-        }
-        else
-        {
-          Serial.println("Stopping audio recording and sending data...");
-          audioManager.stopRecording();
-          bleManager.sendData(audioManager.getAudioData());
+          auto end = std::min(data.size(), i + maxBLEPayloadSize);
+          std::vector<uint8_t> chunk(data.begin() + i, data.begin() + end);
+          Serial.println("Streaming audio data chunk...");
+          bleManager.sendData(chunk);
         }
       }
-      lastButtonState = currentButtonState;
-    }
-    delay(50); // Debounce delay
+    };
+
+    // Stream the audio data
+    streamAudioData(audioData);
+
+    delay(1000); // Wait for a second before next recording
   }
   catch (const std::exception &e)
   {
