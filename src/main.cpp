@@ -4,28 +4,33 @@
 #include <BLEUtils.h>
 #include <BLEServer.h>
 
-
-#define SERVICE_UUID        "aee41206-d70d-47f0-9a4f-b9f4faba2a28"
+#define SERVICE_UUID "aee41206-d70d-47f0-9a4f-b9f4faba2a28"
 #define CHARACTERISTIC_UUID "dd83e3eb-324f-46a7-a79c-981c40f2401b"
 
+// Define the pin where the microphone's analog output is connected
+const int micAnalogPin = 39; // GPIO34 for analog input, choose according to your ESP32 board
 
-class MyCallbacks: public BLECharacteristicCallbacks
+// Declare pCharacteristic globally to maintain state across function calls
+BLECharacteristic *pCharacteristic = nullptr;
+
+// Custom callback class for handling BLE events
+class MyCallbacks : public BLECharacteristicCallbacks
 {
-  void onWrite(BLECharacteristic *pCharacteristic)
+  void onWrite(BLECharacteristic *pCharacteristic) override
   {
     std::string value = pCharacteristic->getValue();
 
-    if (value.length() > 0)
+    // Only proceed if the value is not empty
+    if (!value.empty())
     {
+      // Log the received value to the Serial monitor
       Serial.println("*********");
       Serial.print("New value: ");
-      for (int i = 0; i < value.length(); i++)
-      {
-        Serial.print(value[i]);
-      }
-
-      Serial.println();
+      Serial.println(value.c_str());
       Serial.println("*********");
+
+      // Update the characteristic value with the received message
+      pCharacteristic->setValue(value);
     }
   }
 };
@@ -33,34 +38,47 @@ class MyCallbacks: public BLECharacteristicCallbacks
 void setup()
 {
   Serial.begin(115200);
+  // Short delay for serial connection to establish
+  delay(2000);
 
-  Serial.println("1- Download and install an BLE scanner app in your phone");
-  Serial.println("2- Scan for BLE devices in the app");
-  Serial.println("3- Connect to ESP32-BLE_Server");
-  Serial.println("4- Go to CUSTOM CHARACTERISTIC in CUSTOM SERVICE and write something");
-  Serial.println("5- See the magic =)");
-
-  BLEDevice::init("ESP32-BLE-Server");
+  // Initialize BLE device
+  BLEDevice::init("EBL-ESP32");
   BLEServer *pServer = BLEDevice::createServer();
 
+  // Create a BLE service
   BLEService *pService = pServer->createService(SERVICE_UUID);
 
-  BLECharacteristic *pCharacteristic = pService->createCharacteristic(
-                                         CHARACTERISTIC_UUID,
-                                         BLECharacteristic::PROPERTY_READ |
-                                         BLECharacteristic::PROPERTY_WRITE
-                                       );
+  // Create a BLE characteristic
+  pCharacteristic = pService->createCharacteristic(
+      CHARACTERISTIC_UUID,
+      BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_WRITE);
 
+  // Set the initial value for the characteristic
+  pCharacteristic->setValue("Hello World");
+
+  // Register callbacks for characteristic
   pCharacteristic->setCallbacks(new MyCallbacks());
 
-  pCharacteristic->setValue("Hello World");
+  // Start the service
   pService->start();
 
+  // Start advertising
   BLEAdvertising *pAdvertising = pServer->getAdvertising();
   pAdvertising->start();
+
+  // Initialize the analog pin for microphone input
+  pinMode(micAnalogPin, INPUT);
 }
 
 void loop()
 {
-  delay(2000);
+  // Read the value from the microphone's analog output
+  int micAnalogValue = analogRead(micAnalogPin);
+
+  // Print the value to the Serial monitor
+  Serial.print("Microphone (analog) value: ");
+  Serial.println(micAnalogValue);
+
+  // No need to update the characteristic value here as it's handled by the callback
+  delay(50); // Shorter delay for more frequent readings
 }
