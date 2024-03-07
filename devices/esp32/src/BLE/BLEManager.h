@@ -14,6 +14,9 @@ public:
     void onConnect(BLEServer *pServer) override;
     void onDisconnect(BLEServer *pServer) override;
     void sendData(const uint8_t *data, size_t length);
+    void sendStartMessage();
+    void sendEndMessage();
+
 private:
     std::string deviceName;
     std::string serviceUUID;

@@ -59,6 +59,18 @@ void BLEManager::onWrite(BLECharacteristic *pCharacteristic)
     }
 }
 
+void BLEManager::sendStartMessage()
+{
+    pCharacteristic->setValue("START");
+    pCharacteristic->notify();
+}
+
+void BLEManager::sendEndMessage()
+{
+    pCharacteristic->setValue("END");
+    pCharacteristic->notify();
+}
+
 void BLEManager::onConnect(BLEServer *pServer)
 {
     Serial.println("Device connected");
