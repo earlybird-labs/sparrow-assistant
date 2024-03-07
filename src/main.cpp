@@ -1,73 +1,62 @@
 #include <Arduino.h>
-// Include AudioManager and BLEManager headers
-#include "Audio/AudioManager.h"
-#include "BLE/BLEManager.h"
+#include <driver/i2s.h>
 
-// Define DEVICE_NAME, SERVICE_UUID, and CHARACTERISTIC_UUID
-const char *DEVICE_NAME = "EBL-CANARY";
-const char *SERVICE_UUID = "aaef8ad8-7bff-4351-b04a-391d5fd66bc7";
-const char *CHARACTERISTIC_UUID = "60abdc93-8293-49f2-918b-ad52250201d9";
+#define I2S_WS 15
+#define I2S_SD 13
+#define I2S_SCK 2
+#define I2S_PORT I2S_NUM_0
 
-AudioManager audioManager;
-BLEManager bleManager(DEVICE_NAME, SERVICE_UUID, CHARACTERISTIC_UUID);
+// Function prototypes
+void i2s_install();
+void i2s_setpin();
 
 void setup()
 {
   Serial.begin(115200);
-
-  audioManager.begin();
-  bleManager.setupBLE();
-  Serial.println("Setup complete, starting loop...");
+  Serial.println("Setup I2S ...");
+  delay(1000);
+  i2s_install();
+  i2s_setpin();
+  i2s_start(I2S_PORT);
+  delay(500);
 }
 
 void loop()
 {
-  try
+  size_t bytes_read;
+  int32_t sample = 0;
+  // The number of bytes you want to read. For a 32-bit sample, this should be 4.
+  const size_t num_bytes_to_read = sizeof(sample);
+  // Call i2s_read with the correct arguments.
+  esp_err_t result = i2s_read(I2S_PORT, &sample, num_bytes_to_read, &bytes_read, portMAX_DELAY);
+  // Check if the read was successful and bytes were actually read.
+  if (result == ESP_OK && bytes_read > 0)
   {
-    Serial.println("Starting audio recording for 5 seconds...");
-    audioManager.recordAudio();
-    delay(5000); // Record for 5 seconds
-    if (!audioManager.isRecording())
-    {
-      Serial.println("Audio recording was not active.");
-      return;
-    }
-
-    Serial.println("Stopping audio recording...");
-    audioManager.stopRecording();
-    Serial.println("Preparing audio data for streaming...");
-    auto audioData = audioManager.getAudioData(); // Retrieve audio data
-
-    // Function to handle the streaming of audio data
-    auto streamAudioData = [](const std::vector<uint8_t> &data)
-    {
-      const size_t maxBLEPayloadSize = 600;
-      if (data.size() <= maxBLEPayloadSize)
-      {
-        Serial.println("Streaming audio data...");
-        bleManager.sendData(data);
-      }
-      else
-      {
-        Serial.println("Audio data size exceeds BLE maximum payload size, splitting data...");
-        for (size_t i = 0; i < data.size(); i += maxBLEPayloadSize)
-        {
-          auto end = std::min(data.size(), i + maxBLEPayloadSize);
-          std::vector<uint8_t> chunk(data.begin() + i, data.begin() + end);
-          Serial.println("Streaming audio data chunk...");
-          bleManager.sendData(chunk);
-        }
-      }
-    };
-
-    // Stream the audio data
-    streamAudioData(audioData);
-
-    delay(1000); // Wait for a second before next recording
+    Serial.println(sample);
   }
-  catch (const std::exception &e)
-  {
-    Serial.print("Error in loop: ");
-    Serial.println(e.what());
-  }
+}
+
+void i2s_install()
+{
+  const i2s_config_t i2s_config = {
+      .mode = i2s_mode_t(I2S_MODE_MASTER | I2S_MODE_RX),
+      .sample_rate = 44100,
+      .bits_per_sample = i2s_bits_per_sample_t(16),
+      .channel_format = I2S_CHANNEL_FMT_ONLY_LEFT,
+      .communication_format = i2s_comm_format_t(I2S_COMM_FORMAT_I2S | I2S_COMM_FORMAT_I2S_MSB),
+      .intr_alloc_flags = 0, // default interrupt priority
+      .dma_buf_count = 8,
+      .dma_buf_len = 64,
+      .use_apll = false};
+  i2s_driver_install(I2S_PORT, &i2s_config, 0, NULL);
+}
+
+void i2s_setpin()
+{
+  const i2s_pin_config_t pin_config = {
+      .bck_io_num = I2S_SCK,
+      .ws_io_num = I2S_WS,
+      .data_out_num = -1,
+      .data_in_num = I2S_SD};
+  i2s_set_pin(I2S_PORT, &pin_config);
 }
