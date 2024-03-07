@@ -13,8 +13,7 @@ public:
     void onWrite(BLECharacteristic *pCharacteristic) override;
     void onConnect(BLEServer *pServer) override;
     void onDisconnect(BLEServer *pServer) override;
-    void sendData(const std::vector<uint8_t> &data);
-
+    void sendData(const uint8_t *data, size_t length);
 private:
     std::string deviceName;
     std::string serviceUUID;

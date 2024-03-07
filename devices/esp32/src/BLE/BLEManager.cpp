@@ -10,26 +10,40 @@ void BLEManager::setupBLE()
     BLEServer *pServer = BLEDevice::createServer();
     pServer->setCallbacks(this);
 
+    // Request a larger MTU size for efficient audio data transmission
+    BLEDevice::setMTU(517);
+
     BLEService *pService = pServer->createService(serviceUUID);
     pCharacteristic = pService->createCharacteristic(
         characteristicUUID,
-        BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_WRITE);
+        BLECharacteristic::PROPERTY_NOTIFY | BLECharacteristic::PROPERTY_WRITE_NR); // Adjusted property name
 
     pCharacteristic->setCallbacks(this);
-    pCharacteristic->setValue("Hello World");
     pService->start();
 
     BLEAdvertising *pAdvertising = pServer->getAdvertising();
     pAdvertising->start();
 }
 
-void BLEManager::sendData(const std::vector<uint8_t> &data)
+void BLEManager::sendData(const uint8_t *data, size_t length)
 {
-    if (pCharacteristic != nullptr)
+    if (pCharacteristic != nullptr && data != nullptr && length > 0)
     {
-        // Ensure the data is correctly typed and passed.
-        pCharacteristic->setValue((uint8_t *)data.data(), data.size());
-        pCharacteristic->notify(); // Notify connected client
+        const size_t maxChunkSize = 600; // Maximum data size
+        size_t offset = 0;
+
+        while (offset < length)
+        {
+            // Calculate chunk size
+            size_t chunkSize = ((length - offset) > maxChunkSize) ? maxChunkSize : (length - offset);
+
+            // Set value to the next chunk of data
+            pCharacteristic->setValue(const_cast<uint8_t *>(data) + offset, chunkSize);
+            pCharacteristic->notify(); // Notify the client
+
+            offset += chunkSize; // Move to the next chunk
+            delay(20);           // Optional: delay to ensure the client has time to process the data
+        }
     }
 }
 
