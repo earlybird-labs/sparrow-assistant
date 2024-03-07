@@ -29,9 +29,21 @@ void BLEManager::sendData(const uint8_t *data, size_t length)
 {
     if (pCharacteristic != nullptr && data != nullptr && length > 0)
     {
-        // Ensure the data and length are valid
-        pCharacteristic->setValue(const_cast<uint8_t *>(data), length);
-        pCharacteristic->notify(); // Efficiently stream the data
+        const size_t maxChunkSize = 600; // Maximum data size
+        size_t offset = 0;
+
+        while (offset < length)
+        {
+            // Calculate chunk size
+            size_t chunkSize = ((length - offset) > maxChunkSize) ? maxChunkSize : (length - offset);
+
+            // Set value to the next chunk of data
+            pCharacteristic->setValue(const_cast<uint8_t *>(data) + offset, chunkSize);
+            pCharacteristic->notify(); // Notify the client
+
+            offset += chunkSize; // Move to the next chunk
+            delay(20);           // Optional: delay to ensure the client has time to process the data
+        }
     }
 }
 
