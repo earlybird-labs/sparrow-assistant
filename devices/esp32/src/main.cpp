@@ -65,21 +65,43 @@ void micTask(void *parameter)
   i2s_start(I2S_PORT);
 
   size_t bytesIn = 0;
-  const float gainFactor = 1.0; // Example gain factor; adjust as needed
+  const float gainFactor = 1.0;   // Example gain factor; adjust as needed
+  const int16_t threshold = 2000; // Define your threshold here
+  const uint32_t holdTime = 5000; // Continue transmitting for 5 seconds after signal drops
+  uint32_t lastAboveThresholdTime = 0;
+
   while (1)
   {
     esp_err_t result = i2s_read(I2S_PORT, &sBuffer, bufferLen, &bytesIn, portMAX_DELAY);
     if (result == ESP_OK)
     {
-      // Apply gain
+      int64_t sum = 0;
       for (int i = 0; i < bytesIn / sizeof(int16_t); i++)
       {
         int32_t temp = sBuffer[i] * gainFactor;
-        sBuffer[i] = (temp > INT16_MAX) ? INT16_MAX : (temp < INT16_MIN) ? INT16_MIN
-                                                                         : temp;
+        temp = (temp > INT16_MAX) ? INT16_MAX : (temp < INT16_MIN) ? INT16_MIN
+                                                                   : temp;
+        sBuffer[i] = temp;
+        sum += abs(temp);
       }
-      // Send audio buffer over BLE
-      bleManager.sendData((const uint8_t *)sBuffer, bytesIn);
+      int16_t average = sum / (bytesIn / sizeof(int16_t));
+
+      // Log the average signal level
+      Serial.print("Average signal level: ");
+      Serial.println(average);
+
+      // Check if the average signal is above the threshold or if we're within the hold time
+      uint32_t currentTime = millis();
+      if (average > threshold)
+      {
+        lastAboveThresholdTime = currentTime;
+      }
+
+      if ((currentTime - lastAboveThresholdTime) <= holdTime)
+      {
+        // Send audio buffer over BLE
+        bleManager.sendData((const uint8_t *)sBuffer, bytesIn);
+      }
     }
   }
 }
