@@ -73,6 +73,10 @@ void micTask(void *parameter)
   uint32_t lastBelowThresholdTime = 0;
   bool isSpeaking = false;
   uint32_t consecutiveAboveThreshold = 0;
+  uint32_t consecutiveBelowThreshold = 0;
+
+  // Add a delay of 5 seconds on boot up
+  vTaskDelay(pdMS_TO_TICKS(5000));
 
   while (1)
   {
@@ -90,12 +94,9 @@ void micTask(void *parameter)
       }
       int16_t average = sum / (bytesIn / sizeof(int16_t));
 
-      if (isSpeaking)
-      {
-        // Log the average signal level only when in SPEAKING mode
-        Serial.print("Average signal level: ");
-        Serial.println(average);
-      }
+      // Log the average signal level
+      Serial.print("Average signal level: ");
+      Serial.println(average);
 
       // Check if the average signal is above the threshold
       uint32_t currentTime = millis();
@@ -103,10 +104,12 @@ void micTask(void *parameter)
       {
         lastAboveThresholdTime = currentTime;
         consecutiveAboveThreshold++;
+        consecutiveBelowThreshold = 0;
       }
       else
       {
         lastBelowThresholdTime = currentTime;
+        consecutiveBelowThreshold++;
         consecutiveAboveThreshold = 0;
       }
 
@@ -121,13 +124,10 @@ void micTask(void *parameter)
       }
       else
       {
-        if ((currentTime - lastAboveThresholdTime) > speakingHoldTime)
+        if (consecutiveBelowThreshold >= 100) // Adjust this value based on your requirements
         {
-          if ((currentTime - lastBelowThresholdTime) > passiveHoldTime)
-          {
-            isSpeaking = false;
-            Serial.println("Transitioning to PASSIVE mode");
-          }
+          isSpeaking = false;
+          Serial.println("Transitioning to PASSIVE mode");
         }
       }
 
