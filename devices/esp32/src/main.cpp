@@ -94,9 +94,12 @@ void micTask(void *parameter)
       }
       int16_t average = sum / (bytesIn / sizeof(int16_t));
 
-      // Log the average signal level
-      Serial.print("Average signal level: ");
-      Serial.println(average);
+      if (isSpeaking)
+      {
+        // Log the average signal level only when speaking
+        Serial.print("Average signal level: ");
+        Serial.println(average);
+      }
 
       // Check if the average signal is above the threshold
       uint32_t currentTime = millis();
