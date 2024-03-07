@@ -65,10 +65,14 @@ void micTask(void *parameter)
   i2s_start(I2S_PORT);
 
   size_t bytesIn = 0;
-  const float gainFactor = 1.0;   // Example gain factor; adjust as needed
-  const int16_t threshold = 2000; // Define your threshold here
-  const uint32_t holdTime = 5000; // Continue transmitting for 5 seconds after signal drops
+  const float gainFactor = 1.0;           // Example gain factor; adjust as needed
+  const int16_t threshold = 100;          // Define your threshold here
+  const uint32_t speakingHoldTime = 2000; // Continue in SPEAKING mode for 2 seconds after signal drops
+  const uint32_t passiveHoldTime = 500;   // Wait for 0.5 seconds in PASSIVE mode before transitioning to SPEAKING
   uint32_t lastAboveThresholdTime = 0;
+  uint32_t lastBelowThresholdTime = 0;
+  bool isSpeaking = false;
+  uint32_t consecutiveAboveThreshold = 0;
 
   while (1)
   {
@@ -86,20 +90,50 @@ void micTask(void *parameter)
       }
       int16_t average = sum / (bytesIn / sizeof(int16_t));
 
-      // Log the average signal level
-      Serial.print("Average signal level: ");
-      Serial.println(average);
+      if (isSpeaking)
+      {
+        // Log the average signal level only when in SPEAKING mode
+        Serial.print("Average signal level: ");
+        Serial.println(average);
+      }
 
-      // Check if the average signal is above the threshold or if we're within the hold time
+      // Check if the average signal is above the threshold
       uint32_t currentTime = millis();
       if (average > threshold)
       {
         lastAboveThresholdTime = currentTime;
+        consecutiveAboveThreshold++;
+      }
+      else
+      {
+        lastBelowThresholdTime = currentTime;
+        consecutiveAboveThreshold = 0;
       }
 
-      if ((currentTime - lastAboveThresholdTime) <= holdTime)
+      // State machine for transitioning between PASSIVE and SPEAKING modes
+      if (!isSpeaking)
       {
-        // Send audio buffer over BLE
+        if (consecutiveAboveThreshold >= 5)
+        {
+          isSpeaking = true;
+          Serial.println("Transitioning to SPEAKING mode");
+        }
+      }
+      else
+      {
+        if ((currentTime - lastAboveThresholdTime) > speakingHoldTime)
+        {
+          if ((currentTime - lastBelowThresholdTime) > passiveHoldTime)
+          {
+            isSpeaking = false;
+            Serial.println("Transitioning to PASSIVE mode");
+          }
+        }
+      }
+
+      // Send audio buffer over BLE if in SPEAKING mode
+      if (isSpeaking)
+      {
         bleManager.sendData((const uint8_t *)sBuffer, bytesIn);
       }
     }
