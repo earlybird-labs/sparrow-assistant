@@ -10,26 +10,28 @@ void BLEManager::setupBLE()
     BLEServer *pServer = BLEDevice::createServer();
     pServer->setCallbacks(this);
 
+    // Request a larger MTU size for efficient audio data transmission
+    BLEDevice::setMTU(517);
+
     BLEService *pService = pServer->createService(serviceUUID);
     pCharacteristic = pService->createCharacteristic(
         characteristicUUID,
-        BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_WRITE);
+        BLECharacteristic::PROPERTY_NOTIFY | BLECharacteristic::PROPERTY_WRITE_NR); // Adjusted property name
 
     pCharacteristic->setCallbacks(this);
-    pCharacteristic->setValue("Hello World");
     pService->start();
 
     BLEAdvertising *pAdvertising = pServer->getAdvertising();
     pAdvertising->start();
 }
 
-void BLEManager::sendData(const std::vector<uint8_t> &data)
+void BLEManager::sendData(const uint8_t *data, size_t length)
 {
-    if (pCharacteristic != nullptr)
+    if (pCharacteristic != nullptr && data != nullptr && length > 0)
     {
-        // Ensure the data is correctly typed and passed.
-        pCharacteristic->setValue((uint8_t *)data.data(), data.size());
-        pCharacteristic->notify(); // Notify connected client
+        // Ensure the data and length are valid
+        pCharacteristic->setValue(const_cast<uint8_t *>(data), length);
+        pCharacteristic->notify(); // Efficiently stream the data
     }
 }
 
