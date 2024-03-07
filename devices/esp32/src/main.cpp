@@ -151,17 +151,24 @@ void connectWSServer()
 
 void micTask(void *parameter)
 {
-
   i2s_install();
   i2s_setpin();
   i2s_start(I2S_PORT);
 
   size_t bytesIn = 0;
+  const float gainFactor = 2; // Example gain factor; adjust as needed
   while (1)
   {
     esp_err_t result = i2s_read(I2S_PORT, &sBuffer, bufferLen, &bytesIn, portMAX_DELAY);
     if (result == ESP_OK && isWebSocketConnected)
     {
+      // Apply gain
+      for (int i = 0; i < bytesIn / sizeof(int16_t); i++)
+      {
+        int32_t temp = sBuffer[i] * gainFactor;
+        sBuffer[i] = (temp > INT16_MAX) ? INT16_MAX : (temp < INT16_MIN) ? INT16_MIN
+                                                                         : temp;
+      }
       client.sendBinary((const char *)sBuffer, bytesIn);
     }
   }
