@@ -3,6 +3,20 @@ import {BleManager, Characteristic, Device} from 'react-native-ble-plx';
 export const serviceUUID = '4fafc201-1fb5-459e-8fcc-c5c9c331914b';
 export const characteristicUUID = 'beb5483e-36e1-4688-b7f5-ea07361b26a8';
 
+export const disconnectFromDevice = async (
+  manager: BleManager,
+  deviceId: string,
+): Promise<void> => {
+  try {
+    console.log(`Attempting to disconnect from device with ID: ${deviceId}...`);
+    await manager.cancelDeviceConnection(deviceId);
+    console.log(`Successfully disconnected from device.`);
+  } catch (error) {
+    console.warn(`Disconnection error: ${error}`);
+    // Even if disconnection fails, you might want to proceed with a reconnection attempt
+  }
+};
+
 export const connectToDevice = async (
   manager: BleManager,
   device: Device,
@@ -42,10 +56,12 @@ const onCharacteristicValueChange = (
   error: Error | null,
   characteristic: Characteristic | null,
 ) => {
+  console.log('Characteristic value changed.');
   try {
     // Handle error scenario
     if (error) {
       console.warn(`Error setting up notifications: ${error}`);
+
       return;
     }
 
