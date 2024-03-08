@@ -135,10 +135,10 @@ void micTask(void *parameter)
       }
 
       // Send audio buffer over BLE if in SPEAKING mode
-      if (isSpeaking)
-      {
-        bleManager.sendData((const uint8_t *)sBuffer, bytesIn);
-      }
+      // if (isSpeaking)
+      // {
+      //   bleManager.sendData((const uint8_t *)sBuffer, bytesIn);
+      // }
     }
   }
 }
