@@ -1,6 +1,6 @@
 import {useCallback, useEffect, useState} from 'react';
 import {BleManager, Device, State} from 'react-native-ble-plx';
-import {connectToDevice} from '../services/bleService';
+import {connectToDevice, disconnectFromDevice} from '../services/bleService';
 import {requestPermissions} from '../utils/permissions';
 
 type DeviceArray = Device[];
@@ -24,13 +24,14 @@ export const useBluetooth = () => {
     [devices],
   );
 
-  const reconnectToDevice = useCallback(() => {
+  const reconnectToDevice = useCallback(async () => {
     if (connectedDeviceId) {
+      await disconnectFromDevice(manager, connectedDeviceId); // Ensure disconnection
       connectToDeviceById(connectedDeviceId);
     } else {
       console.warn('No device ID stored for reconnection.');
     }
-  }, [connectedDeviceId, connectToDeviceById]);
+  }, [connectedDeviceId, connectToDeviceById, manager]);
 
   useEffect(() => {
     async function initBLE() {
