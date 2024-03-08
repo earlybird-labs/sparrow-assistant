@@ -8,7 +8,11 @@ function HomeScreen() {
 
   return (
     <View style={styles.container}>
-      <DeviceList devices={devices} onDevicePress={connectToDevice} />
+      {/* Wrap connectToDevice in an arrow function to pass only the device ID */}
+      <DeviceList
+        devices={devices}
+        onDevicePress={device => connectToDevice(device.id)}
+      />
     </View>
   );
 }
