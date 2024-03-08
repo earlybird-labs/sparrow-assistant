@@ -10,18 +10,18 @@ void BLEManager::setupBLE()
     BLEServer *pServer = BLEDevice::createServer();
     pServer->setCallbacks(this);
 
-    // Request a larger MTU size for efficient audio data transmission
-    BLEDevice::setMTU(517);
+    BLEDevice::setMTU(517); // Request a larger MTU size for efficient audio data transmission
 
     BLEService *pService = pServer->createService(serviceUUID);
     pCharacteristic = pService->createCharacteristic(
         characteristicUUID,
-        BLECharacteristic::PROPERTY_NOTIFY | BLECharacteristic::PROPERTY_WRITE_NR); // Adjusted property name
+        BLECharacteristic::PROPERTY_NOTIFY | BLECharacteristic::PROPERTY_WRITE_NR);
 
     pCharacteristic->setCallbacks(this);
     pService->start();
 
     BLEAdvertising *pAdvertising = pServer->getAdvertising();
+    pAdvertising->addServiceUUID(serviceUUID); // Ensure the service UUID is advertised
     pAdvertising->start();
 }
 
@@ -34,15 +34,11 @@ void BLEManager::sendData(const uint8_t *data, size_t length)
 
         while (offset < length)
         {
-            // Calculate chunk size
             size_t chunkSize = ((length - offset) > maxChunkSize) ? maxChunkSize : (length - offset);
-
-            // Set value to the next chunk of data
             pCharacteristic->setValue(const_cast<uint8_t *>(data) + offset, chunkSize);
-            pCharacteristic->notify(); // Notify the client
-
-            offset += chunkSize; // Move to the next chunk
-            delay(20);           // Optional: delay to ensure the client has time to process the data
+            pCharacteristic->notify();
+            offset += chunkSize;
+            delay(20); // Ensure the client has time to process the data
         }
     }
 }
@@ -79,6 +75,5 @@ void BLEManager::onConnect(BLEServer *pServer)
 void BLEManager::onDisconnect(BLEServer *pServer)
 {
     Serial.println("Device disconnected");
-    // Optionally restart advertising on disconnect
-    BLEDevice::startAdvertising();
+    BLEDevice::startAdvertising(); // Restart advertising on disconnect
 }
