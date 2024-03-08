@@ -1,3 +1,4 @@
 transcribe/node_modules
 transcribe/package-lock.json
 transcribe/audio
+app/ios/Pods
