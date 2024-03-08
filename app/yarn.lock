@@ -1916,7 +1916,7 @@
     metro-config "^0.80.3"
     metro-runtime "^0.80.3"
 
-"@react-native/normalize-color@^2.0.0":
+"@react-native/normalize-color@^2.0.0", "@react-native/normalize-color@^2.1.0":
   version "2.1.0"
   resolved "https://registry.yarnpkg.com/@react-native/normalize-color/-/normalize-color-2.1.0.tgz#939b87a9849e81687d3640c5efa2a486ac266f91"
   integrity sha512-Z1jQI2NpdFJCVgpY+8Dq/Bt3d+YUi1928Q+/CZm/oh66fzM0RUl54vvuXlPJKybH4pdCZey1eDTPaLHkMPNgWA==
@@ -1974,6 +1974,102 @@
   integrity sha512-V4BG07kuYSUkTCSBHG8G8TNhM+F19jXFWnQtzj+we8DrkpSBCee9Z3Ms8yiGer/dlmhe35/Xdgyo3/0rQKg7YA==
   dependencies:
     "@sinonjs/commons" "^3.0.0"
+
+"@tamagui/compose-refs@1.91.3":
+  version "1.91.3"
+  resolved "https://registry.yarnpkg.com/@tamagui/compose-refs/-/compose-refs-1.91.3.tgz#89e89e92786b331c0cdbc62030316bd683420ec8"
+  integrity sha512-t8u/n46zxII3gytKDSis0fAqYeM2wLMtEKpagVFTgLrauJf/Elyy/iPakDStFEikWWwM4wFXt/Hs7M8VA3LOHA==
+
+"@tamagui/constants@1.91.3":
+  version "1.91.3"
+  resolved "https://registry.yarnpkg.com/@tamagui/constants/-/constants-1.91.3.tgz#a4a47fbf2519f7fa0b289858c9e82910003d77c8"
+  integrity sha512-Z17SpgfyXYzpFeWFLC8s7UpGXM0i3O9RVwgcu6687J/mE/yurxi6EevPww89Y0YJnlQ36tDdniKNSKB2aIwfWQ==
+
+"@tamagui/core@^1.91.3":
+  version "1.91.3"
+  resolved "https://registry.yarnpkg.com/@tamagui/core/-/core-1.91.3.tgz#a52f3f4f2d6f502a12d6e6bcfc9402f377967e34"
+  integrity sha512-9c2VdrcPAIhDfhEmRDp3jjrBfipUb74ZfdobrahH+ii2geSoV1rASNuTNMD5hRNR3jk+vXGoTXWHsTXrnEZ5mg==
+  dependencies:
+    "@tamagui/react-native-use-pressable" "1.91.3"
+    "@tamagui/react-native-use-responder-events" "1.91.3"
+    "@tamagui/use-event" "1.91.3"
+    "@tamagui/web" "1.91.3"
+
+"@tamagui/helpers@1.91.3":
+  version "1.91.3"
+  resolved "https://registry.yarnpkg.com/@tamagui/helpers/-/helpers-1.91.3.tgz#1deeffb4254949e5ade378de6d40f9650816dbdc"
+  integrity sha512-NiLVEE7ZP+7vLew/Cjb3G/CigMIVbb+72aGfSnHOGrO6nniAM7XpCDJjDE3X4sV5FPUlXod/9ph1IsXpwWPKJw==
+  dependencies:
+    "@tamagui/constants" "1.91.3"
+    "@tamagui/simple-hash" "1.91.3"
+
+"@tamagui/normalize-css-color@1.91.3":
+  version "1.91.3"
+  resolved "https://registry.yarnpkg.com/@tamagui/normalize-css-color/-/normalize-css-color-1.91.3.tgz#02475a95fec6654cfc38cfeb9e46eaf3ab38788c"
+  integrity sha512-b8VZzRrqoHIUdQgiiCEPdwo7MlCwjINnOCMwVo5btKbAi8C+7Te4vgi7oodKwNVidiaSOxVMzPbqbO6IeTfL5A==
+  dependencies:
+    "@react-native/normalize-color" "^2.1.0"
+
+"@tamagui/react-native-use-pressable@1.91.3":
+  version "1.91.3"
+  resolved "https://registry.yarnpkg.com/@tamagui/react-native-use-pressable/-/react-native-use-pressable-1.91.3.tgz#07eb7b07d2b890e199b6fae599da2dcdeedd5a65"
+  integrity sha512-jeYmMx4yWK57m1j0LVqtda1ckG/9tq8EnvrK44KaxPjqC2PtMXT0n3X+DYECP4pNtkzz+MjvF0sgz4ee/Wz8QA==
+
+"@tamagui/react-native-use-responder-events@1.91.3":
+  version "1.91.3"
+  resolved "https://registry.yarnpkg.com/@tamagui/react-native-use-responder-events/-/react-native-use-responder-events-1.91.3.tgz#f708387a950befe002052cfae7d62f3448b3f129"
+  integrity sha512-bUPmzZKQb/CrIXhArvmfW5Tmi/AJIDgZD7XEnImy2G+B7hVZcQYq9HEjuWzgr0seCyH1OLHsiLAC7vFznJlNmQ==
+
+"@tamagui/simple-hash@1.91.3":
+  version "1.91.3"
+  resolved "https://registry.yarnpkg.com/@tamagui/simple-hash/-/simple-hash-1.91.3.tgz#ecc2ce77accdc59175a850d4421dec753e4570ff"
+  integrity sha512-eD/V9W55fSsp7vHy+AX5P9nzOMKhrfE1yaDxwnaQYVI3CrWO/FgnRSe7EZz/cv8C911XnbJ+zM8dzDmQkhC7rQ==
+
+"@tamagui/timer@1.91.3":
+  version "1.91.3"
+  resolved "https://registry.yarnpkg.com/@tamagui/timer/-/timer-1.91.3.tgz#57ff9a60d7fc6001c564226a7ebe07d1ac825910"
+  integrity sha512-FoXVmF3/yXQsTPmn8bHAzQRmnx6uvVlgEP2HHD6ifR08efOuWv1XFv3yUfoD99ilc2e9mhMDNdGEbkF/FHctEw==
+
+"@tamagui/types@1.91.3":
+  version "1.91.3"
+  resolved "https://registry.yarnpkg.com/@tamagui/types/-/types-1.91.3.tgz#0ef54d27c58d08363bbc218afcb7662023bafc99"
+  integrity sha512-sURd8/6JOQMIkU3RKGx83UwVmHOQkEjN1DOabMMINSvTlEpRIhiSGMUBng5FF1TTjsjUs9oqlp8fZFV1hAvxsg==
+
+"@tamagui/use-did-finish-ssr@1.91.3":
+  version "1.91.3"
+  resolved "https://registry.yarnpkg.com/@tamagui/use-did-finish-ssr/-/use-did-finish-ssr-1.91.3.tgz#84f9f6e4eb6c06ad50b7ae02d629e8f1245851ac"
+  integrity sha512-CRpdHpLwlcJnhE54FW3xwytbyakdSWhrWNX4onGqYiFrPN0tkmbkHmhHQvEACH8cd1M3Zgc0+Zg/nwBRvtrYwQ==
+  dependencies:
+    "@tamagui/constants" "1.91.3"
+
+"@tamagui/use-event@1.91.3":
+  version "1.91.3"
+  resolved "https://registry.yarnpkg.com/@tamagui/use-event/-/use-event-1.91.3.tgz#c0be3ad0bb0e2f98feb2ce1ab99d2b4a2e65801e"
+  integrity sha512-WQ2V5IrmtuiK6mmCeZBWfbJlEroHPpOo7vexDjeYdWDaLsTwsZefGDqM1d5kgA/K6zT00TtIaOaLIgwpjSyc2Q==
+  dependencies:
+    "@tamagui/constants" "1.91.3"
+
+"@tamagui/use-force-update@1.91.3":
+  version "1.91.3"
+  resolved "https://registry.yarnpkg.com/@tamagui/use-force-update/-/use-force-update-1.91.3.tgz#89136a34838424debc59e972dfc05eeb594281f1"
+  integrity sha512-vesGlPq/Gk0s0cp7MDc6jiWLhxl/2q9g63V6/xD5NlxG6Rg99/dHj50hPd6mvanfKO5tEDgkJwa6z0Ja66SHLA==
+
+"@tamagui/web@1.91.3":
+  version "1.91.3"
+  resolved "https://registry.yarnpkg.com/@tamagui/web/-/web-1.91.3.tgz#a225255d7e15b6fcc95cf096939849b8e89b4c8d"
+  integrity sha512-xQzl8LLorgSNDoj0N2Posk7Vn2RhmExOQ10KJ7r02OWKQ3m2pYNNtb3T8NEt8Wy+voB3D7d2+stVVbeaiw3CPg==
+  dependencies:
+    "@tamagui/compose-refs" "1.91.3"
+    "@tamagui/constants" "1.91.3"
+    "@tamagui/helpers" "1.91.3"
+    "@tamagui/normalize-css-color" "1.91.3"
+    "@tamagui/timer" "1.91.3"
+    "@tamagui/types" "1.91.3"
+    "@tamagui/use-did-finish-ssr" "1.91.3"
+    "@tamagui/use-event" "1.91.3"
+    "@tamagui/use-force-update" "1.91.3"
+    react "^18.2.0"
+    react-dom "^18.2.0"
 
 "@types/babel__core@^7.1.14":
   version "7.20.5"
@@ -5626,6 +5722,14 @@ react-devtools-core@^4.27.7:
     shell-quote "^1.6.1"
     ws "^7"
 
+react-dom@^18.2.0:
+  version "18.2.0"
+  resolved "https://registry.yarnpkg.com/react-dom/-/react-dom-18.2.0.tgz#22aaf38708db2674ed9ada224ca4aa708d821e3d"
+  integrity sha512-6IMTriUmvsjHUjNtEDudZfuDQUoWXVxKHhlEGSk81n4YFS+r/Kl99wXiwlVXtPBtJenozv2P+hxDsw9eA7Xo6g==
+  dependencies:
+    loose-envify "^1.1.0"
+    scheduler "^0.23.0"
+
 "react-is@^16.12.0 || ^17.0.0 || ^18.0.0", react-is@^18.0.0, react-is@^18.2.0:
   version "18.2.0"
   resolved "https://registry.yarnpkg.com/react-is/-/react-is-18.2.0.tgz#199431eeaaa2e09f86427efbb4f1473edb47609b"
@@ -5719,7 +5823,7 @@ react-test-renderer@18.2.0:
     react-shallow-renderer "^16.15.0"
     scheduler "^0.23.0"
 
-react@18.2.0:
+react@18.2.0, react@^18.2.0:
   version "18.2.0"
   resolved "https://registry.yarnpkg.com/react/-/react-18.2.0.tgz#555bd98592883255fa00de14f1151a917b5d77d5"
   integrity sha512-/3IjMdb2L9QbBdWiW5e3P2/npwMBaU9mHCSCUzNln0ZCYbcfTsGbTJrU/kGemdH2IWmB2ioZ+zkxtmq6g09fGQ==
