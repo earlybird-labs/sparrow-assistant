@@ -11,6 +11,7 @@ public:
     void connect();
     bool isConnected();
     void sendBinary(const char *message, size_t length);
+    void sendText(const char *message);
 
 private:
     WebsocketsClient client;

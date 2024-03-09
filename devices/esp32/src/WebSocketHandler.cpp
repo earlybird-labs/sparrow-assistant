@@ -33,6 +33,14 @@ bool WebSocketHandler::isConnected()
     return isWebSocketConnected;
 }
 
+void WebSocketHandler::sendText(const char *message)
+{
+    if (isWebSocketConnected)
+    {
+        client.send(message, strlen(message));
+    }
+}
+
 void WebSocketHandler::sendBinary(const char *message, size_t length)
 {
     if (isWebSocketConnected)
