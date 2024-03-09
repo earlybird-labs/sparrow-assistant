@@ -1,6 +1,11 @@
 #include <Arduino.h>
 #include "BLEManager.h"
 
+// Add these variables to store WiFi credentials
+static String receivedSSID = "";
+static String receivedPassword = "";
+static bool credentialsReceived = false;
+
 BLEManager::BLEManager(const char *deviceName, const char *serviceUUID, const char *characteristicUUID)
     : deviceName(deviceName), serviceUUID(serviceUUID), characteristicUUID(characteristicUUID) {}
 
@@ -27,6 +32,29 @@ void BLEManager::setupBLE()
     Serial.println("BLE Initialized and Advertising started");
 }
 
+void BLEManager::onWrite(BLECharacteristic *pCharacteristic)
+{
+    std::string value = pCharacteristic->getValue();
+    if (!value.empty())
+    {
+        // Assuming the credentials are sent in the format "SSID:PASSWORD"
+        String receivedData = String(value.c_str());
+        int delimiterPos = receivedData.indexOf(':');
+        if (delimiterPos != -1) // Ensure the delimiter is found
+        {
+            receivedSSID = receivedData.substring(0, delimiterPos);
+            receivedPassword = receivedData.substring(delimiterPos + 1);
+            credentialsReceived = true; // Mark that we've received the credentials
+
+            Serial.println("Received WiFi credentials");
+            Serial.print("SSID: ");
+            Serial.println(receivedSSID);
+            Serial.print("Password: ");
+            Serial.println(receivedPassword);
+        }
+    }
+}
+
 void BLEManager::sendData(const uint8_t *data, size_t length)
 {
     if (pCharacteristic != nullptr && data != nullptr && length > 0)
@@ -42,18 +70,6 @@ void BLEManager::sendData(const uint8_t *data, size_t length)
             offset += chunkSize;
             delay(20); // Ensure the client has time to process the data
         }
-    }
-}
-
-void BLEManager::onWrite(BLECharacteristic *pCharacteristic)
-{
-    std::string value = pCharacteristic->getValue();
-    if (!value.empty())
-    {
-        Serial.println("*********");
-        Serial.print("New value: ");
-        Serial.println(value.c_str());
-        Serial.println("*********");
     }
 }
 
