@@ -11,6 +11,7 @@ function HomeScreen() {
       {/* Wrap connectToDevice in an arrow function to pass only the device ID */}
       <DeviceList
         devices={devices}
+        connectedDeviceId={connectedDeviceId} // Add this line
         onDevicePress={device => connectToDevice(device.id)}
       />
     </View>

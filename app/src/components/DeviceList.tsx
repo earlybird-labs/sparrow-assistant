@@ -5,9 +5,14 @@ import {Device} from 'react-native-ble-plx';
 type DeviceListProps = {
   devices: Device[];
   onDevicePress: (device: Device) => void;
+  connectedDeviceId: string | null; // Add this line
 };
 
-const DeviceList = ({devices, onDevicePress}: DeviceListProps) => {
+const DeviceList = ({
+  devices,
+  onDevicePress,
+  connectedDeviceId,
+}: DeviceListProps) => {
   return (
     <FlatList
       style={styles.listContentContainer}
@@ -15,7 +20,10 @@ const DeviceList = ({devices, onDevicePress}: DeviceListProps) => {
       keyExtractor={item => item.id}
       renderItem={({item}) => (
         <TouchableOpacity
-          style={styles.deviceContainer}
+          style={[
+            styles.deviceContainer,
+            item.id === connectedDeviceId ? styles.connectedDevice : {}, // Apply connectedDevice style if the item is the connected device
+          ]}
           onPress={() => onDevicePress(item)}>
           <Text style={styles.deviceName}>{item.name}</Text>
         </TouchableOpacity>
@@ -39,6 +47,11 @@ const styles = StyleSheet.create({
   },
   listContentContainer: {
     paddingVertical: '15%',
+  },
+  connectedDevice: {
+    // Add this style
+    borderColor: 'white',
+    borderWidth: 2,
   },
 });
 

@@ -29,6 +29,12 @@ export const useBluetooth = () => {
     [devices, bleService],
   );
 
+  const disconnectFromDevice = useCallback(() => {
+    if (connectedDeviceId) {
+      bleService.disconnectFromDevice(connectedDeviceId);
+    }
+  }, [connectedDeviceId, bleService]);
+
   const reconnectToDevice = useCallback(async () => {
     if (connectedDeviceId) {
       try {
@@ -115,10 +121,24 @@ export const useBluetooth = () => {
       }
     });
   }
+  // Inside useBluetooth hook, add the following function
 
+  const toggleDeviceConnection = useCallback(
+    (deviceId: string) => {
+      if (connectedDeviceId === deviceId) {
+        disconnectFromDevice(); // Disconnect if it's the same device
+      } else {
+        connectToDeviceById(deviceId); // Connect if it's a different device
+      }
+    },
+    [connectToDeviceById, disconnectFromDevice, connectedDeviceId],
+  );
+
+  // Update the return statement of the hook to include toggleDeviceConnection
   return {
     devices,
     connectedDeviceId,
-    connectToDevice: connectToDeviceById,
+    connectToDevice: toggleDeviceConnection, // Use toggleDeviceConnection here
+    disconnectFromDevice,
   };
 };
