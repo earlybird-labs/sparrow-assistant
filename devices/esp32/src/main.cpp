@@ -10,7 +10,6 @@ extern String receivedSSID;
 extern String receivedPassword;
 extern bool credentialsReceived;
 
-AudioHandler audioHandler;
 int16_t sBuffer[bufferLen];
 
 const char *ssid = "Early Bird Labs";
@@ -20,6 +19,7 @@ const uint16_t websocket_server_port = 8888;
 
 WiFiHandler wifiHandler(ssid, password);
 WebSocketHandler webSocketHandler(websocket_server_host, websocket_server_port);
+AudioHandler audioHandler(&webSocketHandler); // Pass the address of webSocketHandler
 
 void micTask(void *parameter);
 
