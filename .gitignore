@@ -3,3 +3,4 @@ transcribe/package-lock.json
 transcribe/audio
 app/ios/Pods
 app/yarn.lock
+app/ios/sparrow.xcodeproj/project.pbxproj

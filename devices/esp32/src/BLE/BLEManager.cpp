@@ -6,23 +6,25 @@ BLEManager::BLEManager(const char *deviceName, const char *serviceUUID, const ch
 
 void BLEManager::setupBLE()
 {
-    BLEDevice::init(deviceName);
-    BLEServer *pServer = BLEDevice::createServer();
-    pServer->setCallbacks(this);
+    Serial.println("Initializing BLE...");
+    BLEDevice::init(deviceName);                    // Initialize the device
+    BLEServer *pServer = BLEDevice::createServer(); // Create a BLE server
+    pServer->setCallbacks(this);                    // Set server callbacks
 
-    BLEDevice::setMTU(517); // Request a larger MTU size for efficient audio data transmission
-
-    BLEService *pService = pServer->createService(serviceUUID);
+    BLEService *pService = pServer->createService(serviceUUID); // Create a BLE service
     pCharacteristic = pService->createCharacteristic(
         characteristicUUID,
-        BLECharacteristic::PROPERTY_NOTIFY | BLECharacteristic::PROPERTY_WRITE_NR);
+        BLECharacteristic::PROPERTY_NOTIFY | BLECharacteristic::PROPERTY_BROADCAST | BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_INDICATE | BLECharacteristic::PROPERTY_WRITE | BLECharacteristic::PROPERTY_WRITE_NR); // Create a characteristic
 
-    pCharacteristic->setCallbacks(this);
-    pService->start();
+    pCharacteristic->setCallbacks(this); // Set characteristic callbacks
+    pService->start();                   // Start the service
 
-    BLEAdvertising *pAdvertising = pServer->getAdvertising();
-    pAdvertising->addServiceUUID(serviceUUID); // Ensure the service UUID is advertised
-    pAdvertising->start();
+    BLEAdvertising *pAdvertising = BLEDevice::getAdvertising(); // Get the advertising object
+    pAdvertising->addServiceUUID(serviceUUID);                  // Advertise the service UUID
+    pAdvertising->setScanResponse(true);
+    pAdvertising->start(); // Start advertising
+
+    Serial.println("BLE Initialized and Advertising started");
 }
 
 void BLEManager::sendData(const uint8_t *data, size_t length)

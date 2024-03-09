@@ -51,11 +51,16 @@ void setup()
   Serial.begin(115200);
 
   bleManager.setupBLE();
-  xTaskCreatePinnedToCore(micTask, "micTask", 10000, NULL, 1, NULL, 1);
+  // xTaskCreatePinnedToCore(micTask, "micTask", 10000, NULL, 1, NULL, 1);
 }
 
 void loop()
 {
+  delay(2000);
+  // Send a test string "TEST_DATA"
+  const char *testData = "TEST_DATA";                         // Test string
+  bleManager.sendData((uint8_t *)testData, strlen(testData)); // Cast to uint8_t* and use strlen for length
+  Serial.println("Test string sent via BLE.");
 }
 
 void micTask(void *parameter)

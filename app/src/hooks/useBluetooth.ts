@@ -29,25 +29,29 @@ export const useBluetooth = () => {
     [devices, bleService],
   );
 
-  const disconnectFromDevice = useCallback(() => {
+  const disconnectFromDevice = useCallback(async () => {
     if (connectedDeviceId) {
-      bleService.disconnectFromDevice(connectedDeviceId);
+      try {
+        await bleService.disconnectFromDevice(connectedDeviceId);
+        setConnectedDeviceId(null); // Clear the connected device ID upon successful disconnection
+      } catch (error) {
+        console.warn(`Failed to disconnect: ${error}`);
+      }
     }
   }, [connectedDeviceId, bleService]);
 
   const reconnectToDevice = useCallback(async () => {
     if (connectedDeviceId) {
       try {
-        await bleService.disconnectFromDevice(connectedDeviceId); // Ensure disconnection
+        await disconnectFromDevice(); // Ensure disconnection before reconnecting
+        connectToDeviceById(connectedDeviceId);
       } catch (error) {
-        console.warn(`Failed to disconnect before reconnecting: ${error}`);
-        // Even if disconnection fails, you might still want to try reconnecting
+        console.warn(`Failed to reconnect: ${error}`);
       }
-      connectToDeviceById(connectedDeviceId);
     } else {
       console.warn('No device ID stored for reconnection.');
     }
-  }, [connectedDeviceId, connectToDeviceById, bleService]);
+  }, [connectedDeviceId, connectToDeviceById, disconnectFromDevice]);
 
   useEffect(() => {
     async function initBLE() {
@@ -133,12 +137,21 @@ export const useBluetooth = () => {
     },
     [connectToDeviceById, disconnectFromDevice, connectedDeviceId],
   );
+  // Inside useBluetooth hook, add the following function
+  const checkConnection = useCallback(async () => {
+    if (connectedDeviceId) {
+      await bleService.inspectConnection(connectedDeviceId);
+    } else {
+      console.log('No device is currently connected.');
+    }
+  }, [connectedDeviceId, bleService]);
 
-  // Update the return statement of the hook to include toggleDeviceConnection
+  // Update the return statement of the hook to include checkConnection
   return {
     devices,
     connectedDeviceId,
-    connectToDevice: toggleDeviceConnection, // Use toggleDeviceConnection here
+    connectToDevice: toggleDeviceConnection,
     disconnectFromDevice,
+    checkConnection, // Include this line
   };
 };

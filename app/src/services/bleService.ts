@@ -1,8 +1,8 @@
 import {
-  BleError,
   BleManager,
   Characteristic,
   Device,
+  Subscription,
 } from 'react-native-ble-plx';
 
 export const serviceUUID = '4fafc201-1fb5-459e-8fcc-c5c9c331914b';
@@ -32,25 +32,17 @@ class BLEService {
       `Attempting to disconnect from device with ID: ${deviceId}...`,
     );
     try {
-      if (this.connectedDevice) {
-        const cancelConnection = await this.connectedDevice.cancelConnection();
-        console.log(cancelConnection);
-      } else {
-        this.logMessage(`No connected device found.`);
+      if (!this.connectedDevice || this.connectedDevice.id !== deviceId) {
+        this.logMessage(`No connected device with ID: ${deviceId} found.`);
+        return;
       }
-      this.connectedDevice = null;
+      await this.connectedDevice.cancelConnection();
+      this.logMessage(
+        `Successfully disconnected from device with ID: ${deviceId}.`,
+      );
+      this.connectedDevice = null; // Ensure the connected device is cleared
     } catch (error) {
-      console.warn(`Disconnection error`, error);
-      // Check if the error is an instance of BleError and handle accordingly
-      if (error instanceof BleError) {
-        this.logMessage(
-          `Device already disconnected or disconnection operation was cancelled.`,
-        );
-        this.connectedDevice = null; // Ensure connectedDevice is cleared
-      } else {
-        // For other errors, you might want to throw or handle differently
-        throw error;
-      }
+      this.handleError(`Disconnection error`, error);
     }
   }
 
@@ -68,7 +60,22 @@ class BLEService {
       this.connectedDevice = connectedDevice;
       this.logMessage(`Successfully connected to ${connectedDevice.name}.`);
 
+      await device.discoverAllServicesAndCharacteristics();
+
+      const deviceCharacteristics = await this.manager.characteristicsForDevice(
+        connectedDevice.id,
+        serviceUUID,
+      );
+
+      console.log('deviceCharacteristics', deviceCharacteristics);
+
       await this.discoverAndMonitorDevice(connectedDevice);
+
+      await this.readCharacteristic(
+        connectedDevice.id,
+        serviceUUID,
+        characteristicUUID,
+      );
     } catch (error) {
       this.handleError(`Connection error`, error);
     }
@@ -96,55 +103,138 @@ class BLEService {
     }
   }
 
+  async inspectConnection(deviceId: string): Promise<void> {
+    this.logMessage(`Inspecting connection for device with ID: ${deviceId}...`);
+    try {
+      const device = await this.manager.connectedDevices([serviceUUID]);
+      const isConnected = device.some(d => d.id === deviceId);
+      if (isConnected) {
+        this.logMessage(`Device with ID: ${deviceId} is still connected.`);
+        // Attempt to re-discover services and characteristics
+        await this.discoverAndMonitorDevice(
+          device.find(d => d.id === deviceId)!,
+        );
+      } else {
+        this.logMessage(`Device with ID: ${deviceId} is not connected.`);
+        // Here, you might want to attempt a reconnection or handle the disconnected state appropriately
+      }
+    } catch (error) {
+      this.handleError('Failed to inspect connection', error);
+    }
+  }
+
   async discoverAndMonitorDevice(device: Device): Promise<void> {
     this.logMessage(
       'Attempting to discover all services and characteristics...',
     );
-    const discoveredDevice =
-      await device.discoverAllServicesAndCharacteristics();
-    this.logMessage(
-      `Services and characteristics successfully discovered for ${discoveredDevice.name}.`,
-    );
-
-    this.logMessage(
-      `Attempting to monitor characteristic for service: ${serviceUUID} and characteristic: ${characteristicUUID}...`,
-    );
-    // try {
-    //   const characteristic = await this.readCharacteristic(
-    //     discoveredDevice.id,
-    //     serviceUUID,
-    //     characteristicUUID,
-    //   );
-    //   console.log(characteristic);
-    // } catch (error) {
-    //   this.handleError('Failed to read characteristic value', error);
-    // }
+    try {
+      const discoveredDevice =
+        await device.discoverAllServicesAndCharacteristics();
+      const services = await discoveredDevice.services();
+      for (const service of services) {
+        this.logMessage(`Service UUID: ${service.uuid}`);
+        try {
+          const characteristics = await service.characteristics();
+          this.logMessage(
+            `Found ${characteristics.length} characteristics for service ${service.uuid}`,
+          );
+          for (const characteristic of characteristics) {
+            this.logMessage(`-- Characteristic UUID: ${characteristic.uuid}`);
+          }
+        } catch (error) {
+          this.handleError(
+            `Failed to list characteristics for service ${service.uuid}`,
+            error,
+          );
+        }
+      }
+    } catch (error) {
+      this.handleError(
+        'Failed to discover services and characteristics',
+        error,
+      );
+    }
   }
 
-  onCharacteristicValueChange = (
-    error: Error | null,
-    characteristic: Characteristic | null,
-  ) => {
-    if (error) {
-      this.handleError(`Error setting up notifications`, error);
-      return;
-    }
-
-    if (!characteristic) {
-      this.logMessage('No characteristic data received.');
-      return;
-    }
-
-    this.logMessage(`Received data: ${characteristic.value}`);
-    if (characteristic.value) {
-      const decodedValue = Buffer.from(characteristic.value, 'base64').toString(
-        'ascii',
+  async setupNotifications(deviceId: string): Promise<void> {
+    this.logMessage(
+      `Setting up notifications for device with ID: ${deviceId}...`,
+    );
+    try {
+      const device =
+        await this.manager.discoverAllServicesAndCharacteristicsForDevice(
+          deviceId,
+        );
+      const services = await device.services();
+      const targetService = services.find(s => s.uuid === serviceUUID);
+      if (!targetService) {
+        this.logMessage(`Service with UUID: ${serviceUUID} not found.`);
+        return;
+      }
+      const characteristics = await targetService.characteristics();
+      const targetCharacteristic = characteristics.find(
+        c => c.uuid === characteristicUUID,
       );
-      this.logMessage(`Decoded data: ${decodedValue}`);
-    } else {
-      this.logMessage('Characteristic value is null, cannot decode.');
+      if (!targetCharacteristic) {
+        this.logMessage(
+          `Characteristic with UUID: ${characteristicUUID} not found.`,
+        );
+        return;
+      }
+      if (
+        !targetCharacteristic.isNotifiable &&
+        !targetCharacteristic.isIndicatable
+      ) {
+        this.logMessage(
+          `Characteristic does not support notifications or indications.`,
+        );
+        return;
+      }
+
+      // Remove any existing subscription if necessary
+      if (this.monitorSubscription) {
+        this.monitorSubscription.remove();
+      }
+
+      // Remove any existing subscription if necessary
+      if (this.monitorSubscription) {
+        this.monitorSubscription.remove();
+      }
+
+      // Set up the monitoring subscription
+      this.monitorSubscription =
+        await this.manager.monitorCharacteristicForDevice(
+          deviceId,
+          serviceUUID,
+          characteristicUUID,
+          (error, characteristic) => {
+            if (error) {
+              this.logMessage(
+                `Error during monitoring: ${JSON.stringify(error)}`,
+              );
+              return;
+            }
+            if (characteristic) {
+              const value = characteristic.value;
+              this.logMessage(`Received characteristic update: ${value}`);
+              // If the value is base64 encoded, you can decode it
+              if (value) {
+                const decodedValue = Buffer.from(value, 'base64').toString(
+                  'ascii',
+                );
+                this.logMessage(`Decoded value: ${decodedValue}`);
+              }
+            }
+          },
+        );
+      this.logMessage(`Notifications have been set up.`);
+    } catch (error) {
+      this.handleError('Failed to setup notifications', error);
     }
-  };
+  }
+
+  // Add a property to hold the subscription
+  private monitorSubscription: Subscription | null = null;
 }
 
 export default BLEService;
