@@ -2,6 +2,7 @@
 #include <driver/i2s.h>
 
 #include "BLE/BLEManager.h"
+#include "SD/SDCardManager.h"
 
 #define I2S_WS 15
 #define I2S_SD 13
@@ -12,7 +13,7 @@
 #define bufferLen 1024
 int16_t sBuffer[bufferLen];
 
-BLEManager bleManager("ESP32", "4fafc201-1fb5-459e-8fcc-c5c9c331914b", "beb5483e-36e1-4688-b7f5-ea07361b26a8");
+BLEManager bleManager("sparrow", "4fafc201-1fb5-459e-8fcc-c5c9c331914b", "beb5483e-36e1-4688-b7f5-ea07361b26a8");
 
 void i2s_install()
 {
@@ -49,7 +50,6 @@ void micTask(void *parameter);
 void setup()
 {
   Serial.begin(115200);
-
   bleManager.setupBLE();
   xTaskCreatePinnedToCore(micTask, "micTask", 10000, NULL, 1, NULL, 1);
 }
