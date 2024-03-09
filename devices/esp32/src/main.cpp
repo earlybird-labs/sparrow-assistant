@@ -49,7 +49,7 @@ void micTask(void *parameter)
     if (bytesIn > 0 && webSocketHandler.isConnected())
     {
       // Check if the AudioHandler is in speaking mode
-      if (audioHandler.isSpeaking)
+      if (audioHandler.getIsSpeaking())
       {
         // If in speaking mode, send the buffer over WebSocket
         webSocketHandler.sendBinary((const char *)sBuffer, bytesIn);
