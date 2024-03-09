@@ -9,3 +9,4 @@ backend/data
 backend/package-lock.json
 app/ios/Podfile.lock
 app/ios/sparrow.xcodeproj/project.pbxproj
+backend/app/tmp
