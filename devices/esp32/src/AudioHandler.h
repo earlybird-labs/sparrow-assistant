@@ -10,6 +10,7 @@ public:
     AudioHandler();
     void begin();
     void readMic(int16_t *buffer, size_t bufLen, size_t &bytesRead);
+    bool getIsSpeaking() const; // Declaration of the getter method
 
 private:
     void i2s_install();

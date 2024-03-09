@@ -11,6 +11,11 @@
 // Constructor initialization
 AudioHandler::AudioHandler() : isSpeaking(false), lastAboveThresholdTime(0), lastBelowThresholdTime(0), consecutiveAboveThreshold(0), consecutiveBelowThreshold(0) {}
 
+bool AudioHandler::getIsSpeaking() const
+{
+    return isSpeaking;
+}
+
 void AudioHandler::begin()
 {
     i2s_install();
