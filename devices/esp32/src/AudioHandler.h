@@ -3,16 +3,19 @@
 
 #include <Arduino.h>
 #include <driver/i2s.h>
+#include "WebSocketHandler.h"
 
 class AudioHandler
 {
 public:
-    AudioHandler();
+    AudioHandler(WebSocketHandler *webSocketHandler);
     void begin();
     void readMic(int16_t *buffer, size_t bufLen, size_t &bytesRead);
     bool getIsSpeaking() const; // Declaration of the getter method
 
 private:
+    WebSocketHandler *webSocketHandler;
+
     void i2s_install();
     void i2s_setpin();
     void updateSpeakingState(int16_t average, int16_t threshold);

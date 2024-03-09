@@ -1,4 +1,5 @@
 #include "AudioHandler.h"
+#include "WebSocketHandler.h"
 
 #define I2S_WS 15
 #define I2S_SD 13
@@ -9,7 +10,8 @@
 #define bufferLen 1024
 
 // Constructor initialization
-AudioHandler::AudioHandler() : isSpeaking(false), lastAboveThresholdTime(0), lastBelowThresholdTime(0), consecutiveAboveThreshold(0), consecutiveBelowThreshold(0) {}
+// Add two new parameters to the constructor to allow sending messages
+AudioHandler::AudioHandler(WebSocketHandler *webSocketHandler) : webSocketHandler(webSocketHandler), isSpeaking(false), lastAboveThresholdTime(0), lastBelowThresholdTime(0), consecutiveAboveThreshold(0), consecutiveBelowThreshold(0) {}
 
 bool AudioHandler::getIsSpeaking() const
 {
@@ -94,21 +96,21 @@ void AudioHandler::updateSpeakingState(int16_t average, int16_t threshold)
     }
 
     // Transition to SPEAKING mode
+    // Modify the transitions to send messages
     if (!isSpeaking && consecutiveAboveThreshold >= 5)
-    { // 5 consecutive readings above threshold
+    {
         isSpeaking = true;
+        webSocketHandler->sendText("START_SPEAKING"); // Send start speaking signal
         Serial.println("Transitioning to SPEAKING mode");
-        // Reset counters
         consecutiveAboveThreshold = 0;
         consecutiveBelowThreshold = 0;
     }
 
-    // Transition to PASSIVE mode
     if (isSpeaking && consecutiveBelowThreshold >= 100)
-    { // 100 consecutive readings below threshold
+    {
         isSpeaking = false;
+        webSocketHandler->sendText("STOP_SPEAKING"); // Send stop speaking signal
         Serial.println("Transitioning to PASSIVE mode");
-        // Reset counters
         consecutiveAboveThreshold = 0;
         consecutiveBelowThreshold = 0;
     }
