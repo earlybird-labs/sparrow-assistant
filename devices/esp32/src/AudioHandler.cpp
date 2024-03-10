@@ -2,9 +2,10 @@
 #include "WebSocketHandler.h"
 
 // Pin definitions for I2S communication
-#define I2S_WS 3
-#define I2S_SD 1
+#define I2S_WS 8
+#define I2S_SD 44
 #define I2S_SCK 7
+
 #define I2S_PORT I2S_NUM_0
 
 // Buffer configurations for audio processing
