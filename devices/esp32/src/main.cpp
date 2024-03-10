@@ -27,7 +27,11 @@ void micTask(void *parameter);
 void setup()
 {
   Serial.begin(115200);          // Start the serial monitor
-  delay(1000);                   // Delay for Serial Monitor to open
+
+  // while (!Serial); // Wait for the serial port to connect - only needed on some boards
+
+  // Initialize the SleepHandler
+  sleepHandler.begin(TOUCH_PIN, TIME_TO_SLEEP_IN_SECONDS);
 
   wifiHandler.connect();         // Connect to the WiFi network
   if (wifiHandler.isConnected()) // Check if the WiFi network is connected

@@ -9,7 +9,7 @@
   "keywords": [],
   "license": "ISC",
   "dependencies": {
-    "express": "^4.18.2",
+    "express": "^4.18.3",
     "ws": "^7.4.6"
   }
 }
