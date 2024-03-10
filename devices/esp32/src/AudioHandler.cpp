@@ -2,9 +2,9 @@
 #include "WebSocketHandler.h"
 
 // Pin definitions for I2S communication
-#define I2S_WS 15
-#define I2S_SD 13
-#define I2S_SCK 2
+#define I2S_WS 3
+#define I2S_SD 1
+#define I2S_SCK 7
 #define I2S_PORT I2S_NUM_0
 
 // Buffer configurations for audio processing
@@ -89,6 +89,7 @@ void AudioHandler::readMic(int16_t *buffer, size_t bufLen, size_t &bytesRead)
     if (result != ESP_OK)
     {
         // Handle error
+        printf("Error reading from I2S: %d\n", result);
         return;
     }
 
