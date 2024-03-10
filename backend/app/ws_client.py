@@ -2,6 +2,9 @@ import websocket
 import wave
 import threading
 import time
+import os
+
+from transcribe import transcribe_audio_to_json
 
 
 class AudioWebSocketClient:
@@ -9,44 +12,23 @@ class AudioWebSocketClient:
         self.ws_url = ws_url
         self.ws = None
         self.is_listening = False
-        self.file_index = 0
+        self.file_index = self.find_next_file_index()
         self.wav_file = None
         self.lock = threading.Lock()
-        self.last_speaking_time = time.time()
-        self.silence_threshold = 5  # Initial silence threshold
-        self.buffer_time = 2  # Additional buffer time to prevent early cutoff
 
     def on_message(self, ws, message):
         with self.lock:
-            current_time = time.time()
             if message == "START_SPEAKING":
                 if not self.is_listening:
                     self.is_listening = True
                     self.open_new_file()
-                self.last_speaking_time = current_time
             elif message == "STOP_SPEAKING":
-                # Wait for buffer time before actually stopping
-                if current_time - self.last_speaking_time >= self.buffer_time:
-                    self.is_listening = False
-                    self.close_file()
+                self.is_listening = False
+                self.close_file()
+                # Save the file immediately after stopping
             else:
                 if self.is_listening and self.wav_file:
                     self.wav_file.writeframes(message)
-                    self.last_speaking_time = current_time  # Update last speaking time on receiving audio data
-
-    def check_silence(self):
-        while True:
-            time.sleep(
-                1
-            )  # Check every second instead of every `silence_threshold` to be more responsive
-            with self.lock:
-                if (
-                    time.time() - self.last_speaking_time
-                    > self.silence_threshold + self.buffer_time
-                    and self.is_listening
-                ):
-                    self.is_listening = False
-                    self.close_file()
 
     def on_error(self, ws, error):
         print(f"Error: {error}")
@@ -54,6 +36,7 @@ class AudioWebSocketClient:
     def on_close(self, ws, close_status_code, close_msg):
         print("### closed ###")
         self.close_file()
+        # Ensure the file is saved upon WebSocket closure
 
     def on_open(self, ws):
         print("WebSocket opened")
@@ -61,7 +44,8 @@ class AudioWebSocketClient:
     def open_new_file(self):
         self.close_file()  # Ensure the previous file is closed
         self.file_index += 1
-        file_name = f"wav/audio_stream.wav"
+        file_name = f"tmp/audio/{self.file_index}.wav"
+
         self.wav_file = wave.open(file_name, "wb")
         self.wav_file.setnchannels(1)
         self.wav_file.setsampwidth(2)
@@ -69,8 +53,36 @@ class AudioWebSocketClient:
 
     def close_file(self):
         if self.wav_file:
+            file_name = self.wav_file._file.name  # Get the current file name
             self.wav_file.close()
             self.wav_file = None
+            self.transcribe_file_in_background(file_name)
+
+    def transcribe_file_in_background(self, file_name):
+        """
+        Transcribes the audio file in the background and saves the transcription
+        to a JSON file in the tmp/transcript directory.
+        """
+        output_file_name = f"{self.file_index}.json"
+        output_file_path = os.path.join("tmp/transcript", output_file_name)
+
+        # Ensure the output directory exists
+        os.makedirs(os.path.dirname(output_file_path), exist_ok=True)
+
+        # Start the transcription in a new thread
+        threading.Thread(
+            target=transcribe_audio_to_json, args=(file_name, output_file_path)
+        ).start()
+
+    def find_next_file_index(self):
+        """
+        Finds the next available file index by checking the tmp/audio directory.
+        """
+        files = os.listdir("tmp/audio")
+        indices = [int(file.split(".")[0]) for file in files if file.endswith(".wav")]
+        index = max(indices) + 1 if indices else 0
+        print(f"Next file index: {index}")
+        return index
 
     def run(self):
         self.ws = websocket.WebSocketApp(
@@ -80,7 +92,6 @@ class AudioWebSocketClient:
             on_close=self.on_close,
         )
         self.ws.on_open = self.on_open
-        threading.Thread(target=self.check_silence).start()
         self.ws.run_forever()
 
 
