@@ -1,7 +1,8 @@
+#include <ArduinoWebsockets.h>
+
 #ifndef WebSocketHandler_h
 #define WebSocketHandler_h
 
-#include <ArduinoWebsockets.h>
 using namespace websockets;
 
 class WebSocketHandler

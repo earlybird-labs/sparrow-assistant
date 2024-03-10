@@ -2,8 +2,9 @@
 #include "WiFiHandler.h"
 #include "WebSocketHandler.h"
 #include "AudioHandler.h"
+#include "SleepHandler.h"
 
-#define bufferLen 1024
+#define bufferLen 1024 // Set buffer length for audio data
 
 extern String receivedSSID;
 extern String receivedPassword;
@@ -19,12 +20,15 @@ const uint16_t websocket_server_port = 8888;
 WiFiHandler wifiHandler(ssid, password);
 WebSocketHandler webSocketHandler(websocket_server_host, websocket_server_port);
 AudioHandler audioHandler(&webSocketHandler);
+SleepHandler sleepHandler;
 
 void micTask(void *parameter);
 
 void setup()
 {
   Serial.begin(115200);          // Start the serial monitor
+  delay(1000);                   // Delay for Serial Monitor to open
+
   wifiHandler.connect();         // Connect to the WiFi network
   if (wifiHandler.isConnected()) // Check if the WiFi network is connected
   {
@@ -33,8 +37,8 @@ void setup()
   xTaskCreatePinnedToCore(micTask, "micTask", 10000, NULL, 1, NULL, 1); // Create a new task for the mic
 }
 
-void loop()
-{
+
+void loop() {
 }
 
 void micTask(void *parameter)
