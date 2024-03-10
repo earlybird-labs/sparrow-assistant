@@ -12,3 +12,5 @@ backend/.env
 backend/app/wav
 
 sparrow-assistant.code-workspace
+
+*.pyc
