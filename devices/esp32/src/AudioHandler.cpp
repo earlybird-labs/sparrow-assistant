@@ -94,9 +94,20 @@ void AudioHandler::readMic(int16_t *buffer, size_t bufLen, size_t &bytesRead)
         return;
     }
 
+    // Store incoming audio data in preBuffer in a circular manner
+    for (int i = 0; i < bytesRead / sizeof(int16_t); i++)
+    {
+        preBuffer[preBufferIndex++] = buffer[i];
+        if (preBufferIndex >= preBufferLen) // Reset index if it exceeds the buffer length
+        {
+            preBufferIndex = 0;
+            preBufferFull = true; // Mark buffer as full once it wraps around
+        }
+    }
+
     // Sound intensity filter logic
-    const float gainFactor = 1.0;  // Example gain factor; adjust as needed
-    const int16_t threshold = 100; // Define your threshold here
+    const float gainFactor = 1.0; // Example gain factor; adjust as needed
+    const int16_t threshold = 30; // Define your threshold here
     int64_t sum = 0;
     for (int i = 0; i < bytesRead / sizeof(int16_t); i++)
     {
@@ -112,6 +123,20 @@ void AudioHandler::readMic(int16_t *buffer, size_t bufLen, size_t &bytesRead)
     updateSpeakingState(average, threshold);
 }
 
+void AudioHandler::getPreBufferData(int16_t **buffer, size_t *length)
+{
+    if (preBufferFull)
+    {
+        *buffer = preBuffer;    // Point to the preBuffer
+        *length = preBufferLen; // Length of the preBuffer
+    }
+    else
+    {
+        *buffer = preBuffer;      // Still point to the preBuffer
+        *length = preBufferIndex; // Only part of the buffer is filled
+    }
+}
+
 /**
  * Updates the speaking state based on the average signal level.
  * Determines if the device should transition between speaking and not speaking states.
@@ -121,6 +146,9 @@ void AudioHandler::readMic(int16_t *buffer, size_t bufLen, size_t &bytesRead)
  */
 void AudioHandler::updateSpeakingState(int16_t average, int16_t threshold)
 {
+    // Use dynamicThreshold instead of the static threshold
+    threshold = 50;
+
     uint32_t currentTime = millis();
     if (average > threshold)
     {
@@ -135,11 +163,11 @@ void AudioHandler::updateSpeakingState(int16_t average, int16_t threshold)
         consecutiveAboveThreshold = 0;
     }
 
-    // Transition to SPEAKING mode
-    if (!isSpeaking && consecutiveAboveThreshold >= 5)
+    // Reduced the required consecutive samples for quicker speaking mode activation
+    if (!isSpeaking && consecutiveAboveThreshold >= 2) // Adjusted from 5 to 2
     {
         isSpeaking = true;
-        webSocketHandler->sendText("START_SPEAKING"); // Send start speaking signal
+        webSocketHandler->sendText("START_SPEAKING");
         Serial.println("Transitioning to SPEAKING mode");
         consecutiveAboveThreshold = 0;
         consecutiveBelowThreshold = 0;

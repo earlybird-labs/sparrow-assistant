@@ -11,10 +11,16 @@ public:
     AudioHandler(WebSocketHandler *webSocketHandler);
     void begin();
     void readMic(int16_t *buffer, size_t bufLen, size_t &bytesRead);
-    bool getIsSpeaking() const; // Declaration of the getter method
+    bool getIsSpeaking() const;
+    void getPreBufferData(int16_t **buffer, size_t *length); // Ensure this method is correctly declared
 
 private:
     WebSocketHandler *webSocketHandler;
+
+    static const int preBufferLen = 44100; // Adjust based on your needs, ensuring enough pre-buffer
+    int16_t preBuffer[preBufferLen];
+    int preBufferIndex = 0;
+    bool preBufferFull = false;
 
     void i2s_install();
     void i2s_setpin();

@@ -9,7 +9,7 @@
  * Constructor for the TouchSleepHandler class.
  * Initializes the state and sets up the touch sensor pin.
  */
-TouchSleepHandler::TouchSleepHandler(void (*onEnterSleep)(), void (*onExitSleep)()) : isSleepMode(true), onEnterSleepAction(onEnterSleep), onExitSleepAction(onExitSleep)
+TouchSleepHandler::TouchSleepHandler(void (*onEnterSleep)(), void (*onExitSleep)()) : isSleepMode(false), onEnterSleepAction(onEnterSleep), onExitSleepAction(onExitSleep)
 {
     pinMode(TOUCH_PIN, INPUT);
     pinMode(LED_PIN, OUTPUT);

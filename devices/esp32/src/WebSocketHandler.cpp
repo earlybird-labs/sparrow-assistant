@@ -67,11 +67,15 @@ void WebSocketHandler::sendText(const char *message)
  */
 void WebSocketHandler::sendBinary(const char *message, size_t length)
 {
-    // Only attempt to send the message if the WebSocket is connected.
-    if (isWebSocketConnected)
+    // Example of splitting into chunks (simplified, adjust based on your needs)
+    const size_t maxChunkSize = 1024; // Adjust based on your WebSocket server's capabilities
+    for (size_t i = 0; i < length; i += maxChunkSize)
     {
-        // Send the message as a binary frame.
-        client.sendBinary(message, length);
+        size_t chunkSize = ((i + maxChunkSize) < length) ? maxChunkSize : (length - i);
+        if (isWebSocketConnected)
+        {
+            client.sendBinary(message + i, chunkSize);
+        }
     }
 }
 
