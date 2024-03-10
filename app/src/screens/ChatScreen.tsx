@@ -224,7 +224,7 @@ const ChatScreen = () => {
   const renderSend = useCallback((props: SendProps<IMessage>) => {
     return (
       <Send {...props} containerStyle={{justifyContent: 'center'}}>
-        <Icon name="send" size={30} color={'tomato'} />
+        <Icon name="send" size={26} color={'black'} />
       </Send>
     );
   }, []);
@@ -236,9 +236,9 @@ const ChatScreen = () => {
         <GiftedChat
           messages={state.messages}
           onSend={onSend}
-          loadEarlier={state.loadEarlier}
-          onLoadEarlier={onLoadEarlier}
-          isLoadingEarlier={state.isLoadingEarlier}
+          //   loadEarlier={state.loadEarlier}
+          //   onLoadEarlier={onLoadEarlier}
+          //   isLoadingEarlier={state.isLoadingEarlier}
           parsePatterns={parsePatterns}
           user={user}
           scrollToBottom
@@ -268,7 +268,7 @@ const ChatScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {flex: 1, backgroundColor: '#f5f5f5'},
+  container: {flex: 1, backgroundColor: '#ffffff'},
   content: {backgroundColor: '#ffffff', flex: 1},
 });
 
