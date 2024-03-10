@@ -12,3 +12,4 @@ app/ios/sparrow.xcodeproj/project.pbxproj
 backend/app/tmp
 backend/wav/audio_stream.wav
 backend/.env
+sparrow-assistant.code-workspace
