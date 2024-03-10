@@ -2,6 +2,7 @@
 #include "WiFiHandler.h"
 #include "WebSocketHandler.h"
 #include "AudioHandler.h"
+#include "TouchSleepHandler.h"
 
 #define bufferLen 1024
 
@@ -19,6 +20,7 @@ const uint16_t websocket_server_port = 8888;
 WiFiHandler wifiHandler(ssid, password);
 WebSocketHandler webSocketHandler(websocket_server_host, websocket_server_port);
 AudioHandler audioHandler(&webSocketHandler);
+TouchSleepHandler touchSleepHandler;
 
 void micTask(void *parameter);
 
@@ -35,6 +37,8 @@ void setup()
 
 void loop()
 {
+  touchSleepHandler.handleTouch(); // Check touch sensor and handle sleep mode
+  delay(1000);                     // Delay to reduce constant polling, adjust as needed
 }
 
 void micTask(void *parameter)
