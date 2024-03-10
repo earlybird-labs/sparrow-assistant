@@ -9,6 +9,7 @@ public:
     WiFiHandler(const char *ssid, const char *password);
     void connect();
     bool isConnected();
+    void disconnect();
 
 private:
     const char *ssid;
