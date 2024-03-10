@@ -112,6 +112,12 @@ void BLEManager::onConnect(BLEServer *pServer)
     Serial.println("Device connected");
 }
 
+void BLEManager::stopBLE()
+{
+    BLEDevice::deinit(false); // Deinitialize BLE without erasing services
+    Serial.println("BLE Stopped.");
+}
+
 // Callback function that is called when a device disconnects from the BLE server.
 void BLEManager::onDisconnect(BLEServer *pServer)
 {
