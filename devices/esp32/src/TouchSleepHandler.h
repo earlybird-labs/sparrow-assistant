@@ -4,14 +4,14 @@
 class TouchSleepHandler
 {
 public:
-    TouchSleepHandler();
+    TouchSleepHandler(void (*onEnterSleep)(), void (*onExitSleep)());
     void handleTouch();
     bool getIsSleepMode() const;
 
 private:
-    void enterSleepMode();
-    void exitSleepMode();
     bool isSleepMode;
+    void (*onEnterSleepAction)();
+    void (*onExitSleepAction)();
 };
 
 #endif // TOUCHSLEEPHANDLER_H
