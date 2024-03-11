@@ -5,10 +5,12 @@
 #include "SleepHandler.h"
 #include "TouchHandler.h"
 #include <esp32-hal-touch.h>
+#include <esp_sleep.h>
 
 #define bufferLen 1024
 
 #define TOUCH_PIN 2
+#define LED_PIN 43
 
 extern String receivedSSID;
 extern String receivedPassword;
@@ -24,20 +26,30 @@ const uint16_t websocket_server_port = 8888;
 void micTask(void *parameter);
 void enterSleepMode();
 void exitSleepMode();
-void touchCallback();
+// void touchCallback();
 
 WiFiHandler wifiHandler(ssid, password);
 WebSocketHandler webSocketHandler(websocket_server_host, websocket_server_port);
 AudioHandler audioHandler(&webSocketHandler);
 SleepHandler sleepHandler;
-TouchHandler touchHandler(TOUCH_PIN, touchCallback);
+// TouchHandler touchHandler(TOUCH_PIN, touchCallback);
 
 RTC_DATA_ATTR bool touchDetected = false;
 RTC_DATA_ATTR bool isSleeping = false;
 
-void touchCallback()
+int threshold;
+
+void powerOnCallback()
 {
   touchDetected = true;
+}
+
+void setThreshold()
+{
+  int initialTouchValue = touchRead(TOUCH_PIN);
+  threshold = initialTouchValue * 0.40;
+  Serial.print("Threshold set to: ");
+  Serial.println(threshold);
 }
 
 void setup()
@@ -47,47 +59,95 @@ void setup()
   delay(3000); // Shortened delay to speed up startup
   Serial.println("ESP32 Touch Interrupt Test");
 
-  int initialTouchValue = touchRead(TOUCH_PIN);
-  int threshold = initialTouchValue * 0.60;
+  setThreshold();
 
-  touchAttachInterrupt(TOUCH_PIN, touchCallback, threshold);
+  touchSleepWakeUpEnable(TOUCH_PIN, threshold);
   esp_sleep_enable_touchpad_wakeup();
 
-  // Dynamically set the threshold based on initial touch value
+  touchAttachInterrupt(TOUCH_PIN, powerOnCallback, threshold);
+
+  wifiHandler.connect();
+  printf("WiFiHandler connected\n");
+  if (wifiHandler.isConnected())
+  {
+    webSocketHandler.connect();
+  }
+  xTaskCreatePinnedToCore(micTask, "micTask", 10000, NULL, 1, NULL, 1);
 }
 
 void loop()
 {
-  printf("Looping...\n");
-  if (touchDetected)
+  int touchValue = touchRead(TOUCH_PIN);
+  printf("Touch value: %d\n", touchValue);
+
+  if (touchValue < threshold)
   {
-    printf("Touch detected in loop\n");
-    printf("isSleeping: %d\n", isSleeping);
-    if (!isSleeping)
-    {
-      enterSleepMode();
-      isSleeping = true;
-    }
-    else
-    {
-      isSleeping = false;
-    }
-    touchDetected = false; // Reset the flag
+    enterSleepMode();
+    isSleeping = true;
   }
+
+  // if (touchDetected)
+  // {
+  //   printf("Touch detected in loop\n");
+  //   printf("isSleeping: %d\n", isSleeping);
+  //   if (!isSleeping)
+  //   {
+  //     enterSleepMode();
+  //     isSleeping = true;
+  //   }
+  //   else
+  //   {
+  //     exitSleepMode();
+  //     isSleeping = false;
+  //   }
+  //   touchDetected = false; // Reset the flag
+  // }
   delay(500);
 }
 
 void enterSleepMode()
 {
+  Serial.println("Disconnecting WebSocket...");
+  webSocketHandler.disconnect(); // Assuming WebSocketHandler has a disconnect method
+
+  Serial.println("Disconnecting WiFi...");
+  wifiHandler.disconnect(); // Assuming WiFiHandler has a disconnect method
+
   Serial.println("Entering sleep mode...");
   esp_light_sleep_start();
-  // Additional sleep mode entry actions can be added here
+
+  // Wake-up handling logic here
+  exitSleepMode(); // Call exitSleepMode right after waking up
 }
 
 void exitSleepMode()
 {
   Serial.println("Exiting sleep mode...");
-  // Additional sleep mode exit actions can be added here
+
+  // Check the wake-up reason (optional, if specific handling is needed)
+  esp_sleep_wakeup_cause_t wakeup_reason = esp_sleep_get_wakeup_cause();
+  if (wakeup_reason == ESP_SLEEP_WAKEUP_TOUCHPAD)
+  {
+    Serial.println("Woke up from touchpad");
+  }
+
+  Serial.println("Reconnecting WiFi...");
+  wifiHandler.connect();
+  while (!wifiHandler.isConnected())
+  {
+    delay(1000); // Wait for WiFi to connect
+    Serial.println("Reconnecting to WiFi...");
+  }
+
+  Serial.println("Reconnecting WebSocket...");
+  webSocketHandler.connect();
+  while (!webSocketHandler.isConnected())
+  {
+    delay(1000); // Wait for WebSocket to connect
+    Serial.println("Reconnecting to WebSocket...");
+  }
+
+  // Additional wake-up actions can be added here
 }
 
 void micTask(void *parameter)
