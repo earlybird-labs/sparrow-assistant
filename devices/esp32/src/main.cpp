@@ -2,9 +2,11 @@
 #include "WiFiHandler.h"
 #include "WebSocketHandler.h"
 #include "AudioHandler.h"
-#include "TouchSleepHandler.h"
+#include "TouchHandler.h"
 
 #define bufferLen 1024
+
+const int SENSOR_PIN = 4; // Connect the OUT pin of AT42QT1012 to GPIO4
 
 extern String receivedSSID;
 extern String receivedPassword;
@@ -24,24 +26,50 @@ void exitSleepMode();
 WiFiHandler wifiHandler(ssid, password);
 WebSocketHandler webSocketHandler(websocket_server_host, websocket_server_port);
 AudioHandler audioHandler(&webSocketHandler);
-TouchSleepHandler touchSleepHandler(enterSleepMode, exitSleepMode);
+TouchHandler touchHandler;
+
+// Define a callback function for touch events
+void touchCallback(bool isSleep)
+{
+  if (isSleep)
+  {
+    Serial.println("Touch detected: Entering sleep mode");
+    enterSleepMode();
+  }
+  else
+  {
+    Serial.println("Touch detected: Exiting sleep mode");
+    exitSleepMode();
+  }
+}
 
 void setup()
 {
-  Serial.begin(115200);          // Start the serial monitor
-  wifiHandler.connect();         // Connect to the WiFi network
-  if (wifiHandler.isConnected()) // Check if the WiFi network is connected
+  Serial.begin(115200);
+  printf("Serial initialized\n");
+  wifiHandler.connect();
+  printf("WiFiHandler connected\n");
+  if (wifiHandler.isConnected())
   {
-    webSocketHandler.connect(); // Connect to the WebSocket server
+    webSocketHandler.connect();
   }
-  xTaskCreatePinnedToCore(micTask, "micTask", 10000, NULL, 1, NULL, 1); // Create a new task for the mic
+  xTaskCreatePinnedToCore(micTask, "micTask", 10000, NULL, 1, NULL, 1);
+
+  touchHandler.onSubscribe(touchCallback);
+  touchHandler.start();
 }
 
 void loop()
 {
-  // touchSleepHandler.handleTouch(); // Check touch sensor and handle sleep mode
-  // delay(3000);                     // Delay to reduce constant polling, adjust as needed
+  // printf("Touch value: %d\n", touchRead(T3));
+  delay(5000);
 }
+
+// void loop()
+// {
+//   printf("TouchSleepHandler isSleepMode: %d\n", touchSleepHandler.getIsSleepMode());
+//   delay(5000);
+// }
 
 void enterSleepMode()
 {
@@ -59,31 +87,17 @@ void micTask(void *parameter)
 {
   audioHandler.begin(); // Initialize the AudioHandler
 
-  size_t bytesIn = 0;       // Number of bytes read from the mic
-  bool wasSpeaking = false; // Track speaking state change
-  while (1)                 // Loop forever
+  size_t bytesIn = 0; // Number of bytes read from the mic
+  while (1)           // Loop forever
   {
     audioHandler.readMic(sBuffer, sizeof(sBuffer), bytesIn); // Use AudioHandler to read the mic
     if (bytesIn > 0 && webSocketHandler.isConnected())       // Check if the number of bytes read from the mic is greater than 0 and if the WebSocket is connected
     {
+      // Check if the AudioHandler is in speaking mode
       if (audioHandler.getIsSpeaking()) // If the AudioHandler is in speaking mode
       {
-        if (!wasSpeaking) // Just transitioned to speaking mode
-        {
-          // Retrieve and send pre-buffered data first
-          int16_t *preBufferData;
-          size_t preBufferLength;
-          audioHandler.getPreBufferData(&preBufferData, &preBufferLength); // Assume this method is implemented in AudioHandler
-          webSocketHandler.sendBinary((const char *)preBufferData, preBufferLength * sizeof(int16_t));
-
-          wasSpeaking = true;
-        }
-        // Then send current buffer
+        // If in speaking mode, send the buffer over WebSocket
         webSocketHandler.sendBinary((const char *)sBuffer, bytesIn);
-      }
-      else
-      {
-        wasSpeaking = false;
       }
     }
   }
