@@ -14,7 +14,6 @@ void SleepHandler::enterSleepMode()
     if (sleepMode)
     {
         // Enable touchpad wakeup
-        touchAttachInterrupt(touchHandler.getTouchPin(), nullptr, touchHandler.getTouchThreshold());
         esp_sleep_enable_touchpad_wakeup();
         esp_deep_sleep_start(); // Enter deep sleep
     }
