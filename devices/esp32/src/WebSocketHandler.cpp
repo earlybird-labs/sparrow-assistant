@@ -35,6 +35,19 @@ void WebSocketHandler::connect()
 }
 
 /**
+ * Disconnects from the WebSocket server.
+ */
+void WebSocketHandler::disconnect()
+{
+    if (isWebSocketConnected) // Check if the WebSocket is currently connected
+    {
+        client.close();                            // Close the WebSocket connection
+        isWebSocketConnected = false;              // Update the connection status
+        Serial.println("WebSocket Disconnected!"); // Print a confirmation message to the serial monitor
+    }
+}
+
+/**
  * Checks if the WebSocket connection is currently established.
  *
  * @return True if the WebSocket is connected, false otherwise.
