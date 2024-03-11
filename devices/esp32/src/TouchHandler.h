@@ -1,27 +1,28 @@
-#ifndef TOUCH_HANDLER_H
-#define TOUCH_HANDLER_H
+#ifndef TOUCHHANDLER_H
+#define TOUCHHANDLER_H
 
 #include <Arduino.h>
-#include <driver/touch_sensor.h>
-
-typedef void (*TouchCallback)(bool isSleep);
+#include <esp32-hal-touch.h>
 
 class TouchHandler
 {
 public:
-    TouchHandler();
-    void start();
-    void setTouchThreshold(uint16_t threshold); // Correctly added
-    void onSubscribe(TouchCallback callback);
+    TouchHandler(uint8_t touchPin, void (*touchCallback)(bool));
+    void begin();
+    bool checkTouch(); // Add this line to declare the checkTouch method
+
+    uint8_t getTouchPin() const;
+    uint16_t getTouchThreshold() const;
+
+    static TouchHandler *instance; // Singleton instance
+    static bool isSleepMode;       // Indicates if the system is in sleep mode
+    static int baselineTouchValue; // Static member to hold the baseline touch value
+    static volatile bool isrFlag;  // Flag set by the ISR (not used in the simplified version but kept for compatibility)
+    static int touchMode;          // 0 for sleep, 1 for wake - Add this line
 
 private:
-    static void touchTask(void *parameter);
-    void handleTouch();
-    void onTouched(bool isSleep); // Updated to accept a bool parameter
-
-    static const uint16_t DEFAULT_TOUCH_THRESHOLD = 50000;
-    uint16_t TOUCH_THRESHOLD = DEFAULT_TOUCH_THRESHOLD;
-    TouchCallback touchCallback = nullptr;
+    uint8_t touchPin; // Keep this non-static
+    void (*touchCallback)(bool);
 };
 
-#endif // TOUCH_HANDLER_H
+#endif

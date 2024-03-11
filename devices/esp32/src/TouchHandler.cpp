@@ -1,55 +1,53 @@
 #include "TouchHandler.h"
 
-// Initialize the touch pad peripheral.
-TouchHandler::TouchHandler()
+int TouchHandler::baselineTouchValue = 0;
+volatile bool TouchHandler::isrFlag = false;
+int TouchHandler::touchMode = 1;
+
+TouchHandler *TouchHandler::instance = nullptr;
+
+TouchHandler::TouchHandler(uint8_t touchPin, void (*touchCallback)(bool))
+    : touchPin(touchPin), touchCallback(touchCallback)
 {
-    touch_pad_init();
+    TouchHandler::instance = this;
 }
 
-// Task to handle touch input.
-void TouchHandler::touchTask(void *parameter)
+void TouchHandler::begin()
 {
-    TouchHandler *touchHandler = static_cast<TouchHandler *>(parameter);
-    touchHandler->handleTouch();
+    baselineTouchValue = touchRead(touchPin); // Set the initial baseline touch value
+    printf("Baseline touch value: %d, Mode: %d \n", baselineTouchValue, touchMode);
 }
 
-// Start the touch handling task.
-void TouchHandler::start()
+bool TouchHandler::checkTouch()
 {
-    xTaskCreate(&TouchHandler::touchTask, "touch_task", 2048, this, 5, NULL);
-}
+    if (!instance)
+        return false; // Return false if instance is nullptr
 
-// Subscribe to touch events with a callback.
-void TouchHandler::onSubscribe(TouchCallback callback)
-{
-    touchCallback = callback;
-}
+    int currentTouchValue = touchRead(instance->touchPin);
+    float changePercent = abs(currentTouchValue - instance->baselineTouchValue) / (float)instance->baselineTouchValue * 100.0;
+    const float sensitivityThreshold = 20.0;
 
-// Private method to handle touch logic.
-void TouchHandler::handleTouch()
-{
-    uint16_t touch_value;
-    while (1)
+    if (changePercent > sensitivityThreshold)
     {
-        touch_value = touchRead(T3);
-        printf("Touch value: %d\n", touch_value);
-        if (touch_value < DEFAULT_TOUCH_THRESHOLD)
+        instance->touchMode = !instance->touchMode; // Toggle mode
+        // Update baselineTouchValue for next comparison if waking up
+        if (instance->touchMode == 1)
         {
-            onTouched(true); // True for SLEEP
+            instance->baselineTouchValue = currentTouchValue;
         }
-        else
-        {
-            onTouched(false); // False for AWAKE
-        }
-        vTaskDelay(100 / portTICK_PERIOD_MS);
+        return true; // Return true because a mode change occurred
     }
+    return false; // Return false if no mode change occurred
 }
 
-// Notify subscribed callback about the touch event.
-void TouchHandler::onTouched(bool isSleep)
+uint8_t TouchHandler::getTouchPin() const
 {
-    if (touchCallback != nullptr)
-    {
-        touchCallback(isSleep);
-    }
+    return touchPin;
+}
+
+uint16_t TouchHandler::getTouchThreshold() const
+{
+    // Define a suitable threshold value based on your application's needs
+    const uint16_t threshold = 40; // Example threshold value
+    return threshold;
 }
