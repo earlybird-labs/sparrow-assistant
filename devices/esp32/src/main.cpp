@@ -2,11 +2,12 @@
 #include "WiFiHandler.h"
 #include "WebSocketHandler.h"
 #include "AudioHandler.h"
+#include "SleepHandler.h"
 #include "TouchHandler.h"
 
 #define bufferLen 1024
 
-const int SENSOR_PIN = 4; // Connect the OUT pin of AT42QT1012 to GPIO4
+#define TOUCH_PIN 2
 
 extern String receivedSSID;
 extern String receivedPassword;
@@ -22,11 +23,16 @@ const uint16_t websocket_server_port = 8888;
 void micTask(void *parameter);
 void enterSleepMode();
 void exitSleepMode();
+void touchCallback(bool isSleep);
 
 WiFiHandler wifiHandler(ssid, password);
 WebSocketHandler webSocketHandler(websocket_server_host, websocket_server_port);
 AudioHandler audioHandler(&webSocketHandler);
-TouchHandler touchHandler;
+SleepHandler sleepHandler;
+TouchHandler touchHandler(TOUCH_PIN, touchCallback);
+
+// ADD BACK LATER
+// TouchHandler touchHandler(2, touchCallback);
 
 // Define a callback function for touch events
 void touchCallback(bool isSleep)
@@ -46,23 +52,44 @@ void touchCallback(bool isSleep)
 void setup()
 {
   Serial.begin(115200);
+  delay(2000);
   printf("Serial initialized\n");
+
+  touchHandler.begin();
+  printf("TouchHandler initialized\n");
+
+  // xTaskCreatePinnedToCore(micTask, "micTask", 10000, NULL, 1, NULL, 1);
+  // printf("micTask created\n");
+
+  delay(2000);
+
   wifiHandler.connect();
-  printf("WiFiHandler connected\n");
+
   if (wifiHandler.isConnected())
   {
     webSocketHandler.connect();
   }
-  xTaskCreatePinnedToCore(micTask, "micTask", 10000, NULL, 1, NULL, 1);
 
-  touchHandler.onSubscribe(touchCallback);
-  touchHandler.start();
+  delay(1000);
 }
 
 void loop()
 {
-  // printf("Touch value: %d\n", touchRead(T3));
-  delay(5000);
+  bool touchChange = touchHandler.checkTouch();
+  if (touchChange)
+  {
+    printf("Touch change detected\n");
+    if (!sleepHandler.isSleepMode())
+    {
+      sleepHandler.enterSleepMode();
+    }
+    else
+    {
+      sleepHandler.exitSleepMode();
+    }
+  }
+
+  delay(3000); // Adjust the delay as needed
 }
 
 // void loop()
