@@ -4,6 +4,7 @@
 #include "AudioHandler.h"
 #include "SleepHandler.h"
 #include "TouchHandler.h"
+#include <esp32-hal-touch.h>
 
 #define bufferLen 1024
 
@@ -23,7 +24,7 @@ const uint16_t websocket_server_port = 8888;
 void micTask(void *parameter);
 void enterSleepMode();
 void exitSleepMode();
-void touchCallback(bool isSleep);
+void touchCallback();
 
 WiFiHandler wifiHandler(ssid, password);
 WebSocketHandler webSocketHandler(websocket_server_host, websocket_server_port);
@@ -31,76 +32,55 @@ AudioHandler audioHandler(&webSocketHandler);
 SleepHandler sleepHandler;
 TouchHandler touchHandler(TOUCH_PIN, touchCallback);
 
-// ADD BACK LATER
-// TouchHandler touchHandler(2, touchCallback);
+RTC_DATA_ATTR bool touchDetected = false;
+RTC_DATA_ATTR bool isSleeping = false;
 
-// Define a callback function for touch events
-void touchCallback(bool isSleep)
+void touchCallback()
 {
-  if (isSleep)
-  {
-    Serial.println("Touch detected: Entering sleep mode");
-    enterSleepMode();
-  }
-  else
-  {
-    Serial.println("Touch detected: Exiting sleep mode");
-    exitSleepMode();
-  }
+  touchDetected = true;
 }
 
 void setup()
 {
+
   Serial.begin(115200);
-  delay(2000);
-  printf("Serial initialized\n");
+  delay(3000); // Shortened delay to speed up startup
+  Serial.println("ESP32 Touch Interrupt Test");
 
-  touchHandler.begin();
-  printf("TouchHandler initialized\n");
+  int initialTouchValue = touchRead(TOUCH_PIN);
+  int threshold = initialTouchValue * 0.60;
 
-  // xTaskCreatePinnedToCore(micTask, "micTask", 10000, NULL, 1, NULL, 1);
-  // printf("micTask created\n");
+  touchAttachInterrupt(TOUCH_PIN, touchCallback, threshold);
+  esp_sleep_enable_touchpad_wakeup();
 
-  delay(2000);
-
-  wifiHandler.connect();
-
-  if (wifiHandler.isConnected())
-  {
-    webSocketHandler.connect();
-  }
-
-  delay(1000);
+  // Dynamically set the threshold based on initial touch value
 }
 
 void loop()
 {
-  bool touchChange = touchHandler.checkTouch();
-  if (touchChange)
+  printf("Looping...\n");
+  if (touchDetected)
   {
-    printf("Touch change detected\n");
-    if (!sleepHandler.isSleepMode())
+    printf("Touch detected in loop\n");
+    printf("isSleeping: %d\n", isSleeping);
+    if (!isSleeping)
     {
-      sleepHandler.enterSleepMode();
+      enterSleepMode();
+      isSleeping = true;
     }
     else
     {
-      sleepHandler.exitSleepMode();
+      isSleeping = false;
     }
+    touchDetected = false; // Reset the flag
   }
-
-  delay(3000); // Adjust the delay as needed
+  delay(500);
 }
-
-// void loop()
-// {
-//   printf("TouchSleepHandler isSleepMode: %d\n", touchSleepHandler.getIsSleepMode());
-//   delay(5000);
-// }
 
 void enterSleepMode()
 {
   Serial.println("Entering sleep mode...");
+  esp_light_sleep_start();
   // Additional sleep mode entry actions can be added here
 }
 
