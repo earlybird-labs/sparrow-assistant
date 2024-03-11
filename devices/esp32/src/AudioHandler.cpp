@@ -2,7 +2,7 @@
 #include "WebSocketHandler.h"
 
 // Pin definitions for I2S communication
-#define I2S_WS 8
+#define I2S_WS 6
 #define I2S_SD 44
 #define I2S_SCK 7
 
@@ -21,16 +21,6 @@
 AudioHandler::AudioHandler(WebSocketHandler *webSocketHandler) : webSocketHandler(webSocketHandler), isSpeaking(false), lastAboveThresholdTime(0), lastBelowThresholdTime(0), consecutiveAboveThreshold(0), consecutiveBelowThreshold(0) {}
 
 /**
- * Returns the current speaking state.
- *
- * @return True if currently speaking, false otherwise.
- */
-bool AudioHandler::getIsSpeaking() const
-{
-    return isSpeaking;
-}
-
-/**
  * Initializes the I2S hardware for audio input.
  * Configures the I2S with predefined settings for audio capture.
  */
@@ -39,6 +29,16 @@ void AudioHandler::begin()
     i2s_install();
     i2s_setpin();
     i2s_start(I2S_PORT);
+}
+
+/**
+ * Returns the current speaking state.
+ *
+ * @return True if currently speaking, false otherwise.
+ */
+bool AudioHandler::getIsSpeaking() const
+{
+    return isSpeaking;
 }
 
 /**
@@ -146,7 +146,7 @@ void AudioHandler::getPreBufferData(int16_t **buffer, size_t *length)
  */
 void AudioHandler::updateSpeakingState(int16_t average, int16_t threshold)
 {
-    // Use dynamicThreshold instead of the static threshold
+    // Set the threshold to 50
     threshold = 50;
 
     uint32_t currentTime = millis();
@@ -163,8 +163,8 @@ void AudioHandler::updateSpeakingState(int16_t average, int16_t threshold)
         consecutiveAboveThreshold = 0;
     }
 
-    // Reduced the required consecutive samples for quicker speaking mode activation
-    if (!isSpeaking && consecutiveAboveThreshold >= 2) // Adjusted from 5 to 2
+    // Check if the device is not speaking and the number of consecutive samples above the threshold is greater than or equal to 2
+    if (!isSpeaking && consecutiveAboveThreshold >= 2)
     {
         isSpeaking = true;
         webSocketHandler->sendText("START_SPEAKING");
