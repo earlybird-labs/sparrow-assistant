@@ -2,12 +2,12 @@
 
 int TouchHandler::baselineTouchValue = 0;
 volatile bool TouchHandler::isrFlag = false;
-int TouchHandler::touchMode = 1;
+int TouchHandler::touchMode = 0;
 
 TouchHandler *TouchHandler::instance = nullptr;
 
-TouchHandler::TouchHandler(uint8_t touchPin, void (*touchCallback)(bool))
-    : touchPin(touchPin), touchCallback(touchCallback)
+TouchHandler::TouchHandler(uint8_t touchPin, void (*touchCallback)())
+    : touchPin(touchPin), touchCallback()
 {
     TouchHandler::instance = this;
 }

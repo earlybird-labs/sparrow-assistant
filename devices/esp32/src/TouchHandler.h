@@ -7,7 +7,7 @@
 class TouchHandler
 {
 public:
-    TouchHandler(uint8_t touchPin, void (*touchCallback)(bool));
+    TouchHandler(uint8_t touchPin, void (*touchCallback)());
     void begin();
     bool checkTouch(); // Add this line to declare the checkTouch method
 
