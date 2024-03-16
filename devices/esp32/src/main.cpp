@@ -37,7 +37,7 @@ SleepHandler sleepHandler;
 RTC_DATA_ATTR bool touchDetected = false;
 RTC_DATA_ATTR bool isSleeping = false;
 
-int threshold;
+RTC_DATA_ATTR int threshold;
 
 void powerOnCallback()
 {
@@ -47,7 +47,8 @@ void powerOnCallback()
 void setThreshold()
 {
   int initialTouchValue = touchRead(TOUCH_PIN);
-  threshold = initialTouchValue * 0.40;
+  threshold = initialTouchValue * 0.6;
+  // threshold = 30000;
   Serial.print("Threshold set to: ");
   Serial.println(threshold);
 }
@@ -61,8 +62,9 @@ void setup()
 
   setThreshold();
 
-  touchSleepWakeUpEnable(TOUCH_PIN, threshold);
   esp_sleep_enable_touchpad_wakeup();
+
+  touchSleepWakeUpEnable(TOUCH_PIN, threshold);
 
   touchAttachInterrupt(TOUCH_PIN, powerOnCallback, threshold);
 
@@ -107,6 +109,7 @@ void loop()
 
 void enterSleepMode()
 {
+  // end mic task
   Serial.println("Disconnecting WebSocket...");
   webSocketHandler.disconnect(); // Assuming WebSocketHandler has a disconnect method
 
@@ -114,7 +117,11 @@ void enterSleepMode()
   wifiHandler.disconnect(); // Assuming WiFiHandler has a disconnect method
 
   Serial.println("Entering sleep mode...");
+  Serial.end();
   esp_light_sleep_start();
+  Serial.begin(115200);
+
+  Serial.println("Waking up...");
 
   // Wake-up handling logic here
   exitSleepMode(); // Call exitSleepMode right after waking up
