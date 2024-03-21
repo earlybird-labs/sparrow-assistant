@@ -9,6 +9,7 @@ class WebSocketHandler
 public:
     WebSocketHandler(const char *host, uint16_t port);
     void connect();
+    void disconnect();
     bool isConnected();
     void sendBinary(const char *message, size_t length);
     void sendText(const char *message);

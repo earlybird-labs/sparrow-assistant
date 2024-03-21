@@ -5,10 +5,12 @@
 #include "SleepHandler.h"
 #include "TouchHandler.h"
 #include <esp32-hal-touch.h>
+#include <esp_sleep.h>
 
 #define bufferLen 1024
 
 #define TOUCH_PIN 2
+#define LED_PIN 43
 
 extern String receivedSSID;
 extern String receivedPassword;
@@ -24,70 +26,146 @@ const uint16_t websocket_server_port = 8888;
 void micTask(void *parameter);
 void enterSleepMode();
 void exitSleepMode();
-void touchCallback();
+// void touchCallback();
 
 WiFiHandler wifiHandler(ssid, password);
 WebSocketHandler webSocketHandler(websocket_server_host, websocket_server_port);
 AudioHandler audioHandler(&webSocketHandler);
 SleepHandler sleepHandler;
-TouchHandler touchHandler(TOUCH_PIN, touchCallback);
+// TouchHandler touchHandler(TOUCH_PIN, touchCallback);
 
 RTC_DATA_ATTR bool touchDetected = false;
 RTC_DATA_ATTR bool isSleeping = false;
 
-void touchCallback()
+RTC_DATA_ATTR int threshold;
+
+void powerOnCallback()
 {
   touchDetected = true;
+}
+
+void setThreshold()
+{
+  int initialTouchValue = touchRead(TOUCH_PIN);
+  threshold = initialTouchValue * 0.4;
+  // threshold = 30000;
+  Serial.print("Threshold set to: ");
+  Serial.println(threshold);
+}
+
+void configureTouchWakeUp()
+{
+  esp_sleep_enable_touchpad_wakeup();
+  touchSleepWakeUpEnable(TOUCH_PIN, threshold);
+  touchAttachInterrupt(TOUCH_PIN, powerOnCallback, threshold);
 }
 
 void setup()
 {
 
   Serial.begin(115200);
-  delay(3000); // Shortened delay to speed up startup
+  delay(5000); // Shortened delay to speed up startup
   Serial.println("ESP32 Touch Interrupt Test");
 
-  int initialTouchValue = touchRead(TOUCH_PIN);
-  int threshold = initialTouchValue * 0.60;
+  setThreshold();
 
-  touchAttachInterrupt(TOUCH_PIN, touchCallback, threshold);
-  esp_sleep_enable_touchpad_wakeup();
+  configureTouchWakeUp();
 
-  // Dynamically set the threshold based on initial touch value
+  wifiHandler.connect();
+  printf("WiFiHandler connected\n");
+  if (wifiHandler.isConnected())
+  {
+    webSocketHandler.connect();
+  }
+  xTaskCreatePinnedToCore(micTask, "micTask", 10000, NULL, 1, NULL, 1);
 }
 
 void loop()
 {
-  printf("Looping...\n");
-  if (touchDetected)
+  int touchValue = touchRead(TOUCH_PIN);
+  printf("Touch value: %d\n", touchValue);
+
+  if (touchValue < threshold)
   {
-    printf("Touch detected in loop\n");
-    printf("isSleeping: %d\n", isSleeping);
-    if (!isSleeping)
-    {
-      enterSleepMode();
-      isSleeping = true;
-    }
-    else
-    {
-      isSleeping = false;
-    }
-    touchDetected = false; // Reset the flag
+    enterSleepMode();
+    isSleeping = true;
   }
+
+  // if (touchDetected)
+  // {
+  //   printf("Touch detected in loop\n");
+  //   printf("isSleeping: %d\n", isSleeping);
+  //   if (!isSleeping)
+  //   {
+  //     enterSleepMode();
+  //     isSleeping = true;
+  //   }
+  //   else
+  //   {
+  //     exitSleepMode();
+  //     isSleeping = false;
+  //   }
+  //   touchDetected = false; // Reset the flag
+  // }
   delay(500);
 }
 
 void enterSleepMode()
 {
+  Serial.println("Disconnecting WebSocket...");
+  webSocketHandler.disconnect(); // Proper disconnection
+  delay(100);                    // Short delay to ensure disconnection completes
+
+  Serial.println("Disconnecting WiFi...");
+  wifiHandler.disconnect(); // Proper disconnection
+  delay(100);               // Short delay to ensure disconnection completes
+
   Serial.println("Entering sleep mode...");
   esp_light_sleep_start();
-  // Additional sleep mode entry actions can be added here
+
+  exitSleepMode(); // Call exitSleepMode right after waking up
 }
 
 void exitSleepMode()
 {
+  Serial.begin(115200);
   Serial.println("Exiting sleep mode...");
-  // Additional sleep mode exit actions can be added here
+
+  configureTouchWakeUp();
+
+  // Reinitialize WiFi
+  WiFi.disconnect(true);
+  delay(1000); // Allow time for the WiFi hardware to initialize properly
+
+  Serial.println("Reconnecting WiFi...");
+  wifiHandler.connect();
+  long wifiRetryDelay = 1000; // Start with a 1 second delay
+  while (!wifiHandler.isConnected())
+  {
+    delay(wifiRetryDelay);
+    Serial.println("Reconnecting to WiFi...");
+    wifiHandler.connect();                                                   // Attempt to reconnect
+    wifiRetryDelay = std::min(wifiRetryDelay * 2, static_cast<long>(60000)); // Exponential backoff to a maximum of 60 seconds
+  }
+  Serial.println("WiFi connected");
+
+  // Reinitialize WebSocket
+  webSocketHandler.disconnect(); // Ensure any existing connection is closed
+  delay(100);                    // Short delay to ensure disconnection completes
+
+  Serial.println("Reconnecting WebSocket...");
+  webSocketHandler.connect();
+  long wsRetryDelay = 1000; // Start with a 1 second delay
+  while (!webSocketHandler.isConnected())
+  {
+    delay(wsRetryDelay);
+    Serial.println("Reconnecting to WebSocket...");
+    webSocketHandler.connect();                                          // Attempt to reconnect
+    wsRetryDelay = std::min(wsRetryDelay * 2, static_cast<long>(60000)); // Exponential backoff to a maximum of 60 seconds
+  }
+  Serial.println("WebSocket connected");
+
+  // Additional wake-up actions can be added here
 }
 
 void micTask(void *parameter)
